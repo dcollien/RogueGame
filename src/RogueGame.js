@@ -1,27 +1,6 @@
 import GridWorld from './GridWorld.js';
-
-// Base background tile types
-const TileTypes = {
-  Water: Symbol.for('Water'),
-  Ground: Symbol.for('Ground'),
-  Wall: Symbol.for('Wall')
-};
-
-// Features which may be on tiles
-const FeatureTypes = {
-  Empty: Symbol.for('Empty'),
-  Tree: Symbol.for('Tree'),
-  Stump: Symbol.for('Stump'), // extra, shimmed in (for aesthetics)
-  Start: Symbol.for('Start'), // extra, shimmed in (for aesthetics)
-  Door: Symbol.for('Door'),
-  DoorOpen: Symbol.for('DoorOpen'), // extra, shimmed in (for aesthetics)
-  Stone: Symbol.for('Stone'),
-  Axe: Symbol.for('Axe'),
-  Key: Symbol.for('Key'),
-  Gold: Symbol.for('Gold')
-};
-
-const PlayerChars = ['^', '>', 'v', '<'];
+import RuleSet from './RuleSet.js';
+import {TileTypes, FeatureTypes, PlayerChars} from './Constants.js';
 
 class Tile {
   constructor(symbol, orientation = null) {
@@ -49,7 +28,6 @@ class Tile {
   }
 
   getWallSymbol(feature, orientation, layer) {
-    // TODO
     let prefix = null;
     let suffix = null;
 
@@ -127,15 +105,17 @@ class Tile {
 export default class RogueGame {
   constructor(canvas, stateString) {
     this.canvas = canvas;
+
     this.startingState = null;
-    this.grid = this.parse(stateString);
+    this.loadState(stateString);
     const layers = this.createLayers(this.grid);
+    const [width, height] = [this.grid.width, this.grid.height];
 
     this.gridWorld = new GridWorld(this.canvas, {
-      "width": this.grid.width,
-      "height": this.grid.height,
+      "width": width,
+      "height": height,
       "size": 64,
-      "pan": [this.grid.width / 2, this.grid.height / 2],
+      "pan": [width / 2, height / 2],
       "grid": layers,
       "sprites": {
         "Ground": "assets/grass.png",
@@ -161,9 +141,100 @@ export default class RogueGame {
         "<": "assets/player-left.png",
         ">": "assets/player-right.png",
         "Unseen": {fill: 'rgba(0, 0, 0, 0.4)', stroke: 'rgba(96, 96, 96, 0.8)'},
-        "Unvisited": {fill: 'rgba(0, 0, 0, 0.8)', stroke: 'rgba(32, 32, 32, 0.8)'}
+        "Unvisited": {fill: 'rgba(0, 0, 0, 0.6)', stroke: 'rgba(32, 32, 32, 0.8)'}
       }
     });
+  }
+
+  loadState(stateString, visited=null, inventory=null) {
+    try {
+      this.grid = this.parse(stateString);
+    } catch (err) {
+      throw "Unable to parse the map.";
+    }
+
+    this.isGameOver = false;
+    this.visited = Array(this.grid.width * this.grid.height).fill('Unvisited');
+
+    if (inventory) {
+      this.inventory = inventory;
+    }
+
+    if (!this.inventory) {
+      this.inventory = [];
+    }
+
+    if (visited) {
+      visited.forEach((value, index) => this.visited[index] = null);
+    }
+
+    if (!this.ruleset) {
+      this.ruleset = new RuleSet(this.grid, this.inventory);
+    } else {
+      this.ruleset.setState(this.grid, this.inventory);
+    }
+
+    this.update(null);
+  }
+
+  getVisited() {
+    const visited = [];
+    this.visited.forEach((value, index) => {
+      if (value === null) visited.push(index);
+    });
+    return visited;
+  }
+
+  performAction(action) {
+    if (this.isGameOver) return;
+
+    let message;
+
+    try {
+      message = this.ruleset.perform(action);
+      if (message === true) {
+        this.isGameOver = true;
+      }
+    } catch (err) {
+      if (err.type === 'dead') {
+        if (err.reason === 'drowned') {
+          message = 'Agent fell into water and drowned';
+        } else if (err.readon === 'outside') {
+          message = 'Agent wandered off and got lost in the wilderness';
+        } else {
+          message = 'Agent died... somehow';
+        }
+
+        this.isGameOver = true;
+      } else {
+        throw err;
+      }
+    }
+
+    this.update(message);
+  }
+
+  update(message) {
+    this.updateVisited(this.grid);
+
+    if (this.gridWorld) {
+      this.gridWorld.grid = this.createLayers(this.grid);
+      this.gridWorld.hasModified = true;
+    }
+
+    if (this.onChange) {
+      this.onChange(this.grid, this.inventory, this.visited, this.isGameOver, message);
+    }
+  }
+
+  updateVisited(grid) {
+    const py = Math.floor(grid.player.index / grid.width);
+    const px = (grid.player.index % grid.width);
+    for (let y = py - 2; y <= py + 2; y++) {
+      for (let x = px - 2; x <= px + 2; x++) {
+        this.visited[y * grid.width + x] = null;
+      }
+    }
   }
 
   fillExtraFeatures(cell, i) {
@@ -266,11 +337,23 @@ export default class RogueGame {
     const foregroundLayer = grid.tiles.map(tile => tile.getLayer(1));
     const wallLayer1      = grid.tiles.map(tile => tile.getLayer(2));
     const wallLayer2      = grid.tiles.map(tile => tile.getLayer(3));
-    const playerLayer = Array(grid.width * grid.height).fill(null);
+    const playerLayer     = Array(grid.width * grid.height).fill(null);
+    const visibleLayer    = Array(grid.width * grid.height).fill('Unseen');
+    const visitedLayer    = this.visited;
 
-    playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+    if (!this.isGameOver) {
+      playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+    }
 
-    return [backgroundLayer, foregroundLayer, playerLayer, wallLayer1, wallLayer2, null];
+    const py = Math.floor(grid.player.index / grid.width);
+    const px = (grid.player.index % grid.width);
+    for (let y = py - 2; y <= py + 2; y++) {
+      for (let x = px - 2; x <= px + 2; x++) {
+        visibleLayer[y * grid.width + x] = null;
+      }
+    }
+
+    return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, playerLayer, visibleLayer, visitedLayer, null];
   }
 
   parse(stateString) {
@@ -280,6 +363,9 @@ export default class RogueGame {
     const data   = [];
 
     rows.forEach(row => row.split('').forEach(cell => data.push(cell)));
+    rows.forEach(row => {
+      if (row.length !== width) throw "Incorrect width"
+    });
 
     if (!this.startingState) {
       this.startingState = data.slice();
