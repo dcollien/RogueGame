@@ -1,0 +1,28 @@
+{
+  "name": "rogue-game",
+  "version": "0.0.1",
+  "description": "Rogue-like Game Runner",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js --hot --inline --history-api-fallback",
+    "build": "node ./node_modules/webpack/bin/webpack.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.10",
+    "babel-preset-latest": "^6.16.0",
+    "copy-webpack-plugin": "^4.0.1",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2",
+    "eslint-plugin-react": "^6.8.0",
+    "file-loader": "^0.9.0",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.2"
+  },
+  "dependencies": {}
+}

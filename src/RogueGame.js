@@ -1,0 +1,303 @@
+import GridWorld from './GridWorld.js';
+
+// Base background tile types
+const TileTypes = {
+  Water: Symbol.for('Water'),
+  Ground: Symbol.for('Ground'),
+  Wall: Symbol.for('Wall')
+};
+
+// Features which may be on tiles
+const FeatureTypes = {
+  Empty: Symbol.for('Empty'),
+  Tree: Symbol.for('Tree'),
+  Stump: Symbol.for('Stump'), // extra, shimmed in (for aesthetics)
+  Start: Symbol.for('Start'), // extra, shimmed in (for aesthetics)
+  Door: Symbol.for('Door'),
+  DoorOpen: Symbol.for('DoorOpen'), // extra, shimmed in (for aesthetics)
+  Stone: Symbol.for('Stone'),
+  Axe: Symbol.for('Axe'),
+  Key: Symbol.for('Key'),
+  Gold: Symbol.for('Gold')
+};
+
+const PlayerChars = ['^', '>', 'v', '<'];
+
+class Tile {
+  constructor(symbol, orientation = null) {
+    const symbolMap = {
+      'T': [TileTypes.Ground, FeatureTypes.Tree],
+      't': [TileTypes.Ground, FeatureTypes.Stump], // extra, shimmed in
+      'a': [TileTypes.Ground, FeatureTypes.Axe],
+      'k': [TileTypes.Ground, FeatureTypes.Key],
+      'o': [TileTypes.Ground, FeatureTypes.Stone],
+      'g': [TileTypes.Ground, FeatureTypes.Gold],
+      'x': [TileTypes.Ground, FeatureTypes.Start], // extra, shimmed in
+      ' ': [TileTypes.Ground, FeatureTypes.Empty],
+      '-': [TileTypes.Wall,   FeatureTypes.Door],
+      '!': [TileTypes.Wall,   FeatureTypes.DoorOpen], // extra, shimmed in
+      '*': [TileTypes.Wall,   FeatureTypes.Empty],
+      '~': [TileTypes.Water,  FeatureTypes.Empty],
+      'O': [TileTypes.Water,  FeatureTypes.Stone]
+    };
+
+    const [tile, feature] = symbolMap[symbol];
+
+    this.tile = tile;
+    this.feature = feature;
+    this.orientation = orientation;
+  }
+
+  getWallSymbol(feature, orientation, layer) {
+    // TODO
+    let prefix = null;
+    let suffix = null;
+
+    const isH = orientation.includes('H'); // horiz
+    const isV = orientation.includes('V'); // vert
+    const isE = orientation.includes('E'); // bottom-end
+    const isA = orientation.includes('A'); // nothing left/right
+
+    const isDoor = (this.feature === FeatureTypes.DoorOpen || this.feature === FeatureTypes.Door);
+
+    if (layer === 0) {
+      if (isH) {
+        suffix = 'H';
+      } else if (isA && isE && !isDoor) {
+        suffix = 'VE';
+      } else {
+        suffix = 'V';
+      }
+    } else if (layer === 1) {
+      if (isV && !isE && !isA) {
+        suffix = 'V';
+      }
+    }
+
+    if (suffix) {
+      if (this.feature === FeatureTypes.Door && layer === 0) {
+        prefix = 'DC' + suffix;
+      } else if (this.feature === FeatureTypes.DoorOpen && layer === 0) {
+        prefix = 'DO' + suffix;
+      } else {
+        prefix = suffix;
+      }
+    }
+
+    if (prefix) {
+      prefix = prefix + '-Wall';
+    }
+
+    return prefix;
+  }
+
+  getLayer(layer) {
+    let prefix = null;
+    let key = null;
+
+    if (layer === 0) {
+      if (this.tile === TileTypes.Water || this.tile === TileTypes.Ground) {
+        key = Symbol.keyFor(this.tile);
+      } else {
+        // for putting ground under doorways
+        key = Symbol.keyFor(TileTypes.Ground);
+      }
+    } else if (layer === 1 && this.tile !== TileTypes.Wall) {
+      key = Symbol.keyFor(this.tile);
+
+      if (this.feature === FeatureTypes.Empty) {
+        prefix = null;
+      } else {
+        prefix = Symbol.keyFor(this.feature);
+      }
+
+      if (key !== null && prefix !== null) {
+        key = prefix + '-' + key;
+      }
+    } else if (layer === 2 && this.tile === TileTypes.Wall) {
+      key = this.getWallSymbol(this.feature, this.orientation, 0);
+    } else if (layer === 3 && this.tile === TileTypes.Wall) {
+      key = this.getWallSymbol(this.feature, this.orientation, 1);
+    }
+
+    return key;
+  }
+}
+
+export default class RogueGame {
+  constructor(canvas, stateString) {
+    this.canvas = canvas;
+    this.startingState = null;
+    this.grid = this.parse(stateString);
+    const layers = this.createLayers(this.grid);
+
+    this.gridWorld = new GridWorld(this.canvas, {
+      "width": this.grid.width,
+      "height": this.grid.height,
+      "size": 64,
+      "pan": [this.grid.width / 2, this.grid.height / 2],
+      "grid": layers,
+      "sprites": {
+        "Ground": "assets/grass.png",
+        "Tree-Ground": "assets/tree.png",
+        "Stone-Ground": "assets/rock.png",
+        "Stone-Water": "assets/rock_water.png",
+        "Water": "assets/water.png",
+        "H-Wall": "assets/wall-h.png",
+        "V-Wall": "assets/wall-v.png",
+        "T-Wall": "assets/wall-top.png",
+        "VE-Wall": "assets/wall-end-v.png",
+        "DCH-Wall": "assets/door-closed-h.png",
+        "DOH-Wall": "assets/door-open-h.png",
+        "DCV-Wall": "assets/door-closed-v.png",
+        "DOV-Wall": "assets/door-open-v.png",
+        "Stump-Ground": "assets/stump.png",
+        "Axe-Ground": "assets/axe.png",
+        "Key-Ground": "assets/key.png",
+        "Gold-Ground": "assets/gold.png",
+        "Start-Ground": "assets/start.png",
+        "^": "assets/player-up.png",
+        "v": "assets/player-down.png",
+        "<": "assets/player-left.png",
+        ">": "assets/player-right.png",
+        "Unseen": {fill: 'rgba(0, 0, 0, 0.4)', stroke: 'rgba(96, 96, 96, 0.8)'},
+        "Unvisited": {fill: 'rgba(0, 0, 0, 0.8)', stroke: 'rgba(32, 32, 32, 0.8)'}
+      }
+    });
+  }
+
+  fillExtraFeatures(cell, i) {
+    // infer hidden or unspecified features
+    const startCell = this.startingState[i];
+
+    if (PlayerChars.includes(cell)) {
+      // infer what cell the player is standing on
+      if (startCell === '~') {
+        // in the water
+        cell = 'O'; // player must be standing on a stone
+      } else if (startCell === '-') {
+        // in a doorway
+        cell = '-'; // player must be standing in a doorway
+      } else {
+        cell = ' '; // player must be standing on the ground
+      }
+    }
+
+    if (cell === ' ') {
+      if (startCell === 'T') {
+        // This was a tree when we started
+        cell = 't'; // now a stump
+      } else if (startCell === '-') {
+        // This was a doorway
+        cell = '!'; // now an open door
+      } else if (PlayerChars.includes(startCell)) {
+        // This is where the player started
+        cell = 'x'; // mark starting location
+      }
+    }
+
+    return cell;
+  }
+
+  findPlayer(mapData) {
+    const player = {
+      index: null,
+      orientation: null
+    };
+
+    mapData.forEach((cell, i) => {
+      const orientation = PlayerChars.indexOf(cell);
+      if (orientation >= 0) {
+        player.index = i;
+        player.orientation = orientation;
+      }
+    });
+
+    return player;
+  }
+
+  calculateOrientation(cell, i, mapData, width, height) {
+    const wallFeatures = ['-', '!', '*'];
+
+    let orientation = null;
+
+    const wallPresent = (x, y) => {
+      if ((x >= 0 && x < width) && (y >= 0 && y < height)) {
+        return wallFeatures.includes(mapData[y * width + x]);
+      } else {
+        return false;
+      }
+    }
+
+    if (wallFeatures.includes(cell)) {
+      orientation = [];
+
+      const y = Math.floor(i / width);
+      const x = (i % width);
+
+      const above = wallPresent(x, y - 1);
+      const below = wallPresent(x, y + 1);
+      const left  = wallPresent(x - 1, y);
+      const right = wallPresent(x + 1, y);
+
+      if (above || below) {
+        orientation.push('V'); // vertical
+      }
+      if (left || right) {
+        orientation.push('H'); // horizontal
+      }
+      if (above && !below) {
+        orientation.push('E'); // bottom end
+      }
+      if ((above || below) && (!left && !right)) {
+        orientation.push('A'); // alone
+      }
+
+      if (orientation.length === 0) {
+        orientation.push('H');
+      }
+    }
+
+    return orientation;
+  }
+
+  createLayers(grid) {
+    const backgroundLayer = grid.tiles.map(tile => tile.getLayer(0));
+    const foregroundLayer = grid.tiles.map(tile => tile.getLayer(1));
+    const wallLayer1      = grid.tiles.map(tile => tile.getLayer(2));
+    const wallLayer2      = grid.tiles.map(tile => tile.getLayer(3));
+    const playerLayer = Array(grid.width * grid.height).fill(null);
+
+    playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+
+    return [backgroundLayer, foregroundLayer, playerLayer, wallLayer1, wallLayer2, null];
+  }
+
+  parse(stateString) {
+    const rows   = stateString.trim().split('\n');
+    const height = rows.length;
+    const width  = rows[0].length;
+    const data   = [];
+
+    rows.forEach(row => row.split('').forEach(cell => data.push(cell)));
+
+    if (!this.startingState) {
+      this.startingState = data.slice();
+    }
+
+    const tiles = data.map((cell, i) => {
+      cell = this.fillExtraFeatures(cell, i);
+      const orientation = this.calculateOrientation(cell, i, data, width, height);
+      return new Tile(cell, orientation);
+    });
+
+    const player = this.findPlayer(data);
+
+    return {
+      width: width,
+      height: height,
+      tiles: tiles,
+      player: player
+    };
+  }
+}
