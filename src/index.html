@@ -166,7 +166,20 @@
             padding: 8px;
         }
 
+        #minimap {
+            position: absolute;
+            left: 5px;
+            bottom: 5px;
+        }
 
+        #agent-window {
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #444;
+            resize: none;
+            line-height: 14px;
+            letter-spacing: 2pt;
+        }
     </style>
 </head>
 <body>
@@ -197,7 +210,9 @@
             <textarea id="log"></textarea>
         </div>
     </div>
-
+    <div id="minimap">
+        <textarea rows="5" cols="5" id="agent-window"></textarea>
+    </div>
     <div id="editor">
         <div id="editor-title">Map to use:</div>
         <div id="close-editor"><i class="fa fa-times" aria-hidden="true"></i></div>

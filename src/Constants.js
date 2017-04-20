@@ -21,6 +21,13 @@ export const FeatureTypes = {
 
 export const PlayerChars = ['^', '>', 'v', '<'];
 
+export const PlayerDirections = {
+  North: 0,
+  East: 1,
+  South: 2,
+  West: 3
+};
+
 export const InventoryTypes = {
   Stone: Symbol.for('Stone'),
   Axe: Symbol.for('Axe'),

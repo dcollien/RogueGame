@@ -1,6 +1,6 @@
 import GridWorld from './GridWorld.js';
 import RuleSet from './RuleSet.js';
-import {TileTypes, FeatureTypes, PlayerChars} from './Constants.js';
+import {TileTypes, FeatureTypes, PlayerChars, PlayerDirections} from './Constants.js';
 
 class Tile {
   constructor(symbol, orientation = null) {
@@ -212,7 +212,11 @@ export default class RogueGame {
       }
     }
 
-    this.update(message);
+    if (message === true) {
+      message = 'Gold has been collected.\nMission successful!\n';
+    }
+
+    this.update(action.toUpperCase() + ': ' + message);
   }
 
   update(message) {
@@ -224,7 +228,7 @@ export default class RogueGame {
     }
 
     if (this.onChange) {
-      this.onChange(this.grid, this.inventory, this.visited, this.isGameOver || this.isWin, message);
+      this.onChange(this.grid, this.inventory, this.visited, this.isGameOver || this.isWin, message, this.getWindow());
     }
   }
 
@@ -233,7 +237,9 @@ export default class RogueGame {
     const px = (grid.player.index % grid.width);
     for (let y = py - 2; y <= py + 2; y++) {
       for (let x = px - 2; x <= px + 2; x++) {
-        this.visited[y * grid.width + x] = null;
+        if (this.inBounds(x, y, grid)) {
+          this.visited[y * grid.width + x] = null;
+        }
       }
     }
   }
@@ -333,6 +339,11 @@ export default class RogueGame {
     return orientation;
   }
 
+  inBounds(x, y, grid) {
+    const [width, height] = [grid.width, grid.height];
+    return (x >= 0 && x < width) && (y >= 0 && y < height);
+  }
+
   createLayers(grid) {
     const backgroundLayer = grid.tiles.map(tile => tile.getLayer(0));
     const foregroundLayer = grid.tiles.map(tile => tile.getLayer(1));
@@ -350,22 +361,83 @@ export default class RogueGame {
     const px = (grid.player.index % grid.width);
     for (let y = py - 2; y <= py + 2; y++) {
       for (let x = px - 2; x <= px + 2; x++) {
-        visibleLayer[y * grid.width + x] = null;
+        if (this.inBounds(x, y, grid)) {
+          visibleLayer[y * grid.width + x] = null;
+        }
       }
     }
 
     return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, playerLayer, visibleLayer, visitedLayer, null];
   }
 
+  getWindow() {
+    const grid = this.grid;
+    const py = Math.floor(grid.player.index / grid.width);
+    const px = (grid.player.index % grid.width);
+    const size = 5;
+    let windStr = '';
+
+    const tileToChar = (x, y) => {
+      const tile = grid.tiles[y * grid.width + x];
+      if (tile.tile === TileTypes.Ground) {
+        switch (tile.feature) {
+          case FeatureTypes.Tree:  return 'T';
+          case FeatureTypes.Axe:   return 'a';
+          case FeatureTypes.Key:   return 'k';
+          case FeatureTypes.Stone: return 'o';
+          case FeatureTypes.Gold:  return 'g';
+          default: return ' ';
+        }
+      } else if (tile.tile === TileTypes.Wall) {
+        switch (tile.feature) {
+          case FeatureTypes.Door:  return '-';
+          default: return '*';
+        }
+      } else if (tile.tile === TileTypes.Water) {
+        switch (tile.feature) {
+          case FeatureTypes.Stone: return 'O';
+          default: return '~';
+        }
+      }
+    };
+
+    for (let i = 0; i < size*size; ++i) {
+      if (i % size === 0 && i !== 0) {
+          windStr += '\n';
+      }
+
+      const [wx, wy] = [i % size - 2, Math.floor(i / size) - 2];
+      let x, y;
+
+      switch (grid.player.orientation) {
+        case PlayerDirections.North: x = px + wx, y = py + wy; break;
+        case PlayerDirections.South: x = px - wx, y = py - wy; break;
+        case PlayerDirections.West : x = px + wy, y = py - wx; break;
+        case PlayerDirections.East : x = px - wy, y = py + wx; break;
+      }
+
+      if (this.inBounds(x, y, grid)) {
+        windStr += tileToChar(x, y);
+      } else {
+        windStr += '.';
+      }
+    }
+
+    return windStr;
+  }
+
   parse(stateString) {
-    const rows   = stateString.trim().split('\n');
+    const rows   = stateString.split('\n').filter(row => row.length > 0);
     const height = rows.length;
     const width  = rows[0].length;
     const data   = [];
 
-    rows.forEach(row => row.split('').forEach(cell => data.push(cell)));
     rows.forEach(row => {
-      if (row.length !== width) throw "Incorrect width"
+      if (row.length === width) {
+        row.split('').forEach(cell => data.push(cell));
+      } else {
+        throw "Incorrect width";
+      }
     });
 
     if (!this.startingState) {

@@ -79,7 +79,9 @@ window.onload = () => {
       );
     }
   };
-  game.onChange = (grid, inventory, visited, isGameOver, message) => {
+  game.onChange = (grid, inventory, visited, isGameOver, message, windowStr) => {
+    getEl('agent-window').innerText = windowStr;
+
     const inventoryItems = [
       {
         id: 'key',
@@ -121,10 +123,6 @@ window.onload = () => {
     });
 
     if (message || isGameOver) {
-      if (message === true) {
-        message = 'Gold has been collected.\nMission successful!\n';
-      }
-
       log += message + '\n';
       if (isGameOver) {
         log += 'Game Over.\n\n';
