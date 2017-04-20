@@ -154,6 +154,7 @@ export default class RogueGame {
     }
 
     this.isGameOver = false;
+    this.isWin = false;
     this.visited = Array(this.grid.width * this.grid.height).fill('Unvisited');
 
     if (inventory) {
@@ -186,14 +187,14 @@ export default class RogueGame {
   }
 
   performAction(action) {
-    if (this.isGameOver) return;
+    if (this.isGameOver || this.isWin) return;
 
     let message;
 
     try {
       message = this.ruleset.perform(action);
       if (message === true) {
-        this.isGameOver = true;
+        this.isWin = true;
       }
     } catch (err) {
       if (err.type === 'dead') {
@@ -223,7 +224,7 @@ export default class RogueGame {
     }
 
     if (this.onChange) {
-      this.onChange(this.grid, this.inventory, this.visited, this.isGameOver, message);
+      this.onChange(this.grid, this.inventory, this.visited, this.isGameOver || this.isWin, message);
     }
   }
 
