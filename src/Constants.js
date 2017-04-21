@@ -16,7 +16,9 @@ export const FeatureTypes = {
   Stone: Symbol.for('Stone'),
   Axe: Symbol.for('Axe'),
   Key: Symbol.for('Key'),
-  Gold: Symbol.for('Gold')
+  Gold: Symbol.for('Gold'),
+  Dynamite: Symbol.for('Dynamite'),
+  Exploded: Symbol.for('Exploded')
 };
 
 export const PlayerChars = ['^', '>', 'v', '<'];
@@ -32,5 +34,7 @@ export const InventoryTypes = {
   Stone: Symbol.for('Stone'),
   Axe: Symbol.for('Axe'),
   Key: Symbol.for('Key'),
-  Gold: Symbol.for('Gold')
+  Gold: Symbol.for('Gold'),
+  Raft: Symbol.for('Raft'),
+  Dynamite: Symbol.for('Dynamite')
 };

@@ -1,6 +1,6 @@
 import GridWorld from './GridWorld.js';
 import RuleSet from './RuleSet.js';
-import {TileTypes, FeatureTypes, PlayerChars, PlayerDirections} from './Constants.js';
+import {TileTypes, FeatureTypes, InventoryTypes, PlayerChars, PlayerDirections} from './Constants.js';
 
 class Tile {
   constructor(symbol, orientation = null) {
@@ -17,7 +17,9 @@ class Tile {
       '!': [TileTypes.Wall,   FeatureTypes.DoorOpen], // extra, shimmed in
       '*': [TileTypes.Wall,   FeatureTypes.Empty],
       '~': [TileTypes.Water,  FeatureTypes.Empty],
-      'O': [TileTypes.Water,  FeatureTypes.Stone]
+      'O': [TileTypes.Water,  FeatureTypes.Stone],
+      'd': [TileTypes.Ground, FeatureTypes.Dynamite],
+      'D': [TileTypes.Ground, FeatureTypes.Exploded] // extra, shimmed in
     };
 
     const [tile, feature] = symbolMap[symbol];
@@ -120,8 +122,10 @@ export default class RogueGame {
       "sprites": {
         "Ground": "assets/grass.png",
         "Tree-Ground": "assets/tree.png",
+        "Dynamite-Ground": "assets/dynamite.png",
         "Stone-Ground": "assets/rock.png",
         "Stone-Water": "assets/rock_water.png",
+        "Exploded-Ground": "assets/burnt_grass.png",
         "Water": "assets/water.png",
         "H-Wall": "assets/wall-h.png",
         "V-Wall": "assets/wall-v.png",
@@ -140,13 +144,20 @@ export default class RogueGame {
         "v": "assets/player-down.png",
         "<": "assets/player-left.png",
         ">": "assets/player-right.png",
+        "Raft": "assets/raft.png",
         "Unseen": {fill: 'rgba(0, 0, 0, 0.4)', stroke: 'rgba(96, 96, 96, 0.8)'},
         "Unvisited": {fill: 'rgba(0, 0, 0, 0.6)', stroke: 'rgba(32, 32, 32, 0.8)'}
       }
     });
   }
 
-  loadState(stateString, visited=null, inventory=null) {
+  loadState(stateString, visited=null, inventory=null, explosions=null) {
+    this.explosions = [];
+
+    if (explosions) {
+      this.explosions = explosions;
+    }
+
     try {
       this.grid = this.parse(stateString);
     } catch (err) {
@@ -170,9 +181,9 @@ export default class RogueGame {
     }
 
     if (!this.ruleset) {
-      this.ruleset = new RuleSet(this.grid, this.inventory);
+      this.ruleset = new RuleSet(this.grid, this.inventory, this.explosions);
     } else {
-      this.ruleset.setState(this.grid, this.inventory);
+      this.ruleset.setState(this.grid, this.inventory, this.explosions);
     }
 
     this.update(null);
@@ -200,7 +211,7 @@ export default class RogueGame {
       if (err.type === 'dead') {
         if (err.reason === 'drowned') {
           message = 'Agent fell into water and drowned';
-        } else if (err.readon === 'outside') {
+        } else if (err.reason === 'outside') {
           message = 'Agent wandered off and got lost in the wilderness';
         } else {
           message = 'Agent died... somehow';
@@ -272,6 +283,10 @@ export default class RogueGame {
         // This is where the player started
         cell = 'x'; // mark starting location
       }
+    }
+
+    if (this.explosions.includes(cell)) {
+      cell = 'D';
     }
 
     return cell;
@@ -349,12 +364,19 @@ export default class RogueGame {
     const foregroundLayer = grid.tiles.map(tile => tile.getLayer(1));
     const wallLayer1      = grid.tiles.map(tile => tile.getLayer(2));
     const wallLayer2      = grid.tiles.map(tile => tile.getLayer(3));
+    const extrasLayer     = Array(grid.width * grid.height).fill(null);
     const playerLayer     = Array(grid.width * grid.height).fill(null);
     const visibleLayer    = Array(grid.width * grid.height).fill('Unseen');
     const visitedLayer    = this.visited;
 
     if (!this.isGameOver) {
       playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+      if (
+        this.inventory.includes(InventoryTypes.Raft) &&
+        grid.tiles[grid.player.index].tile === TileTypes.Water
+      ) {
+        extrasLayer[grid.player.index] = 'Raft';
+      }
     }
 
     const py = Math.floor(grid.player.index / grid.width);
@@ -367,7 +389,7 @@ export default class RogueGame {
       }
     }
 
-    return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, playerLayer, visibleLayer, visitedLayer, null];
+    return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, extrasLayer, playerLayer, visibleLayer, visitedLayer, null];
   }
 
   getWindow() {

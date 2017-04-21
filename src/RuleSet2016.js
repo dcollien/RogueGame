@@ -1,25 +1,24 @@
 import {TileTypes, FeatureTypes, PlayerChars, InventoryTypes} from './Constants.js';
 
+
 const PassableTerrain = [
   FeatureTypes.Empty,
   FeatureTypes.Stump,
   FeatureTypes.Start,
+  FeatureTypes.Stone,
   FeatureTypes.Axe,
   FeatureTypes.Key,
-  FeatureTypes.Dynamite,
-  FeatureTypes.Gold,
-  FeatureTypes.Exploded
+  FeatureTypes.Gold
 ];
 
 export default class RuleSet {
-  constructor(grid, inventory, explosions) {
-    this.setState(grid, inventory, explosions);
+  constructor(grid, inventory) {
+    this.setState(grid, inventory);
   }
 
-  setState(grid, inventory, explosions) {
+  setState(grid, inventory) {
     this.grid = grid;
     this.inventory = inventory;
-    this.explosions = explosions;
   }
 
   iToCoord(i) {
@@ -85,14 +84,6 @@ export default class RuleSet {
       },
 
       f: () => {
-        if (!this.inBounds(inFront)) {
-          throw {
-            type: 'dead',
-            reason: 'outside'
-          };
-        }
-
-        const oldLocation = this.grid.tiles[index];
         const location = this.grid.tiles[inFront];
         const tile = location.tile;
         const feature = location.feature;
@@ -111,12 +102,6 @@ export default class RuleSet {
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Gold);
             this.inventory.splice(inventoryAt, 1);
           }
-          if (oldLocation.tile === TileTypes.Water) {
-            // moving from water to ground
-            message = 'Raft broke.';
-            const inventoryAt = this.inventory.indexOf(InventoryTypes.Raft);
-            this.inventory.splice(inventoryAt, 1);
-          }
         } else if (tile === TileTypes.Wall) {
           if (feature === FeatureTypes.DoorOpen) {
             canMove = true;
@@ -125,15 +110,20 @@ export default class RuleSet {
           } else if (feature === FeatureTypes.Door) {
             message = 'Door is locked.';
           }
-          if (oldLocation.tile === TileTypes.Water) {
-            // moving from water to doorway
-            message = 'Raft broke.';
-            const inventoryAt = this.inventory.indexOf(InventoryTypes.Raft);
-            this.inventory.splice(inventoryAt, 1);
-          }
         } else if (tile === TileTypes.Water) {
-          if (this.inventory.includes(InventoryTypes.Raft)) {
-            // if you have a raft you can move on water
+          // moving on water
+          if (feature === FeatureTypes.Empty) {
+            if (this.inventory.includes(InventoryTypes.Stone)) {
+              // place a stone
+              location.feature = FeatureTypes.Stone;
+              const inventoryAt = this.inventory.indexOf(InventoryTypes.Stone);
+              this.inventory.splice(inventoryAt, 1);
+              message = 'Placed a stone.';
+              canMove = true;
+            }
+          }
+
+          if (location.feature === FeatureTypes.Stone) {
             canMove = true;
           } else {
             throw {
@@ -143,10 +133,15 @@ export default class RuleSet {
           }
         }
 
-        if (canMove) {
+        if (!this.inBounds(inFront)) {
+          throw {
+            type: 'dead',
+            reason: 'outside'
+          };
+        } else if (canMove) {
           this.grid.player.index = inFront;
 
-          const pickups = [FeatureTypes.Key, FeatureTypes.Axe, FeatureTypes.Dynamite, FeatureTypes.Gold];
+          const pickups = [FeatureTypes.Key, FeatureTypes.Axe, FeatureTypes.Stone, FeatureTypes.Gold];
 
           if (tile === TileTypes.Ground && pickups.includes(location.feature)) {
             this.inventory.push(location.feature);
@@ -171,12 +166,7 @@ export default class RuleSet {
         ) {
           // chop down the tree
           location.feature = FeatureTypes.Stump;
-          if (this.inventory.includes(InventoryTypes.Raft)) {
-            message = 'Chopped down a tree. Already have a raft.';
-          } else {
-            this.inventory.push(InventoryTypes.Raft);
-            message = 'Chopped down a tree and made a raft.';
-          }
+          message = 'Chopped down a tree.';
         } else {
           message = 'Unable to chop.';
         }
@@ -196,48 +186,6 @@ export default class RuleSet {
           message = 'Unlocked a door.';
         } else {
           message = 'Unable to unlock.';
-        }
-      },
-
-      b: () => {
-        const location = this.grid.tiles[inFront];
-
-        if (
-          this.inventory.includes(InventoryTypes.Dynamite) &&
-          this.inBounds(inFront) &&
-          (
-            location.tile === TileTypes.Wall ||
-            location.feature === FeatureTypes.Tree
-          )
-        ) {
-          if (location.tile === TileTypes.Wall) {
-            message = 'Blasted wall.';
-          } else {
-            message = 'Blasted tree.';
-          }
-          location.tile = TileTypes.Ground;
-          location.feature = FeatureTypes.Exploded;
-          this.explosions.push(inFront);
-
-          // hack to make walls click together properly
-          const tileAboveIndex = this.up(inFront);
-          const tileAbove = this.grid.tiles[tileAboveIndex];
-          if (this.inBounds(tileAboveIndex) && tileAbove.tile === TileTypes.Wall) {
-            const verticalOverlay = tileAbove.orientation.indexOf('V');
-            if (verticalOverlay >= 0) {
-              tileAbove.orientation.splice(verticalOverlay, 1);
-              tileAbove.orientation.push('E');
-            }
-          }
-
-          const inventoryAt = this.inventory.indexOf(InventoryTypes.Dynamite);
-          this.inventory.splice(inventoryAt, 1);
-        } else {
-          if (!this.inventory.includes(InventoryTypes.Dynamite)) {
-            message = 'No dynamite.';
-          } else {
-            message = 'Nothing to blow up.';
-          }
         }
       }
     };

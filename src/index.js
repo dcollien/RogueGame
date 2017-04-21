@@ -17,7 +17,8 @@ window.onload = () => {
     r: getEl('action-r'),
     f: getEl('action-f'),
     c: getEl('action-c'),
-    u: getEl('action-u')
+    u: getEl('action-u'),
+    b: getEl('action-b')
   };
 
   const actionHandler = (action) => (e) => game.performAction(action);
@@ -43,11 +44,14 @@ window.onload = () => {
       case 'F'.charCodeAt(0): game.performAction('f'); break;
       case 'C'.charCodeAt(0): game.performAction('c'); break;
       case 'U'.charCodeAt(0): game.performAction('u'); break;
+      case 'B'.charCodeAt(0): game.performAction('b'); break;
+
       case 'A'.charCodeAt(0): game.performAction('l'); break;
       case 'D'.charCodeAt(0): game.performAction('r'); break;
       case 'W'.charCodeAt(0): game.performAction('f'); break;
       case 'Q'.charCodeAt(0): game.performAction('c'); break;
       case 'E'.charCodeAt(0): game.performAction('u'); break;
+      case 'S'.charCodeAt(0): game.performAction('b'); break;
       default: break;
     }
   }
@@ -98,6 +102,14 @@ window.onload = () => {
       {
         id: 'gold',
         symbol: InventoryTypes.Gold
+      },
+      {
+        id: 'raft',
+        symbol: InventoryTypes.Raft
+      },
+      {
+        id: 'dynamite',
+        symbol: InventoryTypes.Dynamite
       },
     ];
 

@@ -96,6 +96,12 @@
         #gold {
             background-image: url('assets/gold.png');
         }
+        #raft {
+            background-image: url('assets/raft.png');
+        }
+        #dynamite {
+            background-image: url('assets/dynamite.png');
+        }
 
         #log {
             float: right;
@@ -178,7 +184,13 @@
             border: 1px solid #444;
             resize: none;
             line-height: 14px;
-            letter-spacing: 2pt;
+            padding-left: 1em;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            overflow: hidden;
+            background-color: #444;
+            color: #eee;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -194,11 +206,14 @@
                 <li id="action-f">F <i class="fa fa-arrow-up" aria-hidden="true"></i></li>
                 <li id="action-c">C <i class="fa fa-cut" aria-hidden="true"></i></li>
                 <li id="action-u">U <i class="fa fa-unlock" aria-hidden="true"></i></li>
+                <li id="action-b">B <i class="fa fa-fire" aria-hidden="true"></i></li>
             </ul>
             <ul class="panel" id="inventory">
                 <li id="axe" style="display: none;"></li>
-                <li id="stone" style="display: none;"></li>
                 <li id="key" style="display: none;"></li>
+                <li id="stone" style="display: none;"></li>
+                <li id="dynamite" style="display: none;"></li>
+                <li id="raft" style="display: none;"></li>
                 <li id="gold" style="display: none;"></li>
             </ul>
 
@@ -223,9 +238,9 @@
 ~~     T     T   k ~~
 ~~   ~~*     *~~   ~~
 ~~*-*     v     *-*~~
-~~  **         **  ~~
-~~ g **   o   ** a ~~
-~~     *     *     ~~
+~~  **    d    **  ~~
+~~ g **       ** a ~~
+~~     -     *     ~~
 ~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~
 </textarea>
