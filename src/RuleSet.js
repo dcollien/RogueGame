@@ -32,11 +32,14 @@ export default class RuleSet {
   coordToI(coord) {
     const [x, y] = coord;
 
-    return y * this.grid.width + x;
+    if (!this.inBounds(x, y)) {
+      return -1;
+    } else {
+      return y * this.grid.width + x;
+    }
   }
 
-  inBounds(i) {
-    const [x, y] = this.iToCoord(i);
+  inBounds(x, y) {
     const [width, height] = [this.grid.width, this.grid.height];
     return (x >= 0 && x < width) && (y >= 0 && y < height);
   }
@@ -85,7 +88,7 @@ export default class RuleSet {
       },
 
       f: () => {
-        if (!this.inBounds(inFront)) {
+        if (inFront < 0) {
           throw {
             type: 'dead',
             reason: 'outside'
@@ -111,7 +114,7 @@ export default class RuleSet {
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Gold);
             this.inventory.splice(inventoryAt, 1);
           }
-          if (oldLocation.tile === TileTypes.Water) {
+          if (oldLocation.tile === TileTypes.Water && canMove) {
             // moving from water to ground
             message = 'Raft broke.';
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Raft);
@@ -125,7 +128,7 @@ export default class RuleSet {
           } else if (feature === FeatureTypes.Door) {
             message = 'Door is locked.';
           }
-          if (oldLocation.tile === TileTypes.Water) {
+          if (oldLocation.tile === TileTypes.Water && canMove) {
             // moving from water to doorway
             message = 'Raft broke.';
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Raft);
@@ -166,7 +169,7 @@ export default class RuleSet {
 
         if (
           this.inventory.includes(InventoryTypes.Axe) &&
-          this.inBounds(inFront) &&
+          inFront >= 0 &&
           feature === FeatureTypes.Tree
         ) {
           // chop down the tree
@@ -188,7 +191,7 @@ export default class RuleSet {
 
         if (
           this.inventory.includes(InventoryTypes.Key) &&
-          this.inBounds(inFront) &&
+          inFront >= 0 &&
           feature === FeatureTypes.Door
         ) {
           // unlock the door
@@ -204,7 +207,7 @@ export default class RuleSet {
 
         if (
           this.inventory.includes(InventoryTypes.Dynamite) &&
-          this.inBounds(inFront) &&
+          inFront >= 0 &&
           (
             location.tile === TileTypes.Wall ||
             location.feature === FeatureTypes.Tree
@@ -222,7 +225,7 @@ export default class RuleSet {
           // hack to make walls click together properly
           const tileAboveIndex = this.up(inFront);
           const tileAbove = this.grid.tiles[tileAboveIndex];
-          if (this.inBounds(tileAboveIndex) && tileAbove.tile === TileTypes.Wall) {
+          if (tileAboveIndex >= 0 && tileAbove.tile === TileTypes.Wall) {
             const verticalOverlay = tileAbove.orientation.indexOf('V');
             if (verticalOverlay >= 0) {
               tileAbove.orientation.splice(verticalOverlay, 1);

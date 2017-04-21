@@ -19,6 +19,7 @@ class Tile {
       '~': [TileTypes.Water,  FeatureTypes.Empty],
       'O': [TileTypes.Water,  FeatureTypes.Stone],
       'd': [TileTypes.Ground, FeatureTypes.Dynamite],
+      'w': [TileTypes.Ground, FeatureTypes.Wilson],
       'D': [TileTypes.Ground, FeatureTypes.Exploded] // extra, shimmed in
     };
 
@@ -124,6 +125,7 @@ export default class RogueGame {
         "Tree-Ground": "assets/tree.png",
         "Dynamite-Ground": "assets/dynamite.png",
         "Stone-Ground": "assets/rock.png",
+        "Wilson-Ground": "assets/wilson.png",
         "Stone-Water": "assets/rock_water.png",
         "Exploded-Ground": "assets/burnt_grass.png",
         "Water": "assets/water.png",
@@ -408,6 +410,8 @@ export default class RogueGame {
           case FeatureTypes.Key:   return 'k';
           case FeatureTypes.Stone: return 'o';
           case FeatureTypes.Gold:  return 'g';
+          case FeatureTypes.Dynamite: return 'd';
+          case FeatureTypes.Wilson: return '?';
           default: return ' ';
         }
       } else if (tile.tile === TileTypes.Wall) {

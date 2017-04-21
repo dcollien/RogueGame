@@ -18,7 +18,8 @@ export const FeatureTypes = {
   Key: Symbol.for('Key'),
   Gold: Symbol.for('Gold'),
   Dynamite: Symbol.for('Dynamite'),
-  Exploded: Symbol.for('Exploded')
+  Exploded: Symbol.for('Exploded'),
+  Wilson: Symbol.for('Wilson')
 };
 
 export const PlayerChars = ['^', '>', 'v', '<'];

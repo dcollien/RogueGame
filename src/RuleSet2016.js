@@ -31,10 +31,14 @@ export default class RuleSet {
   coordToI(coord) {
     const [x, y] = coord;
 
-    return y * this.grid.width + x;
+    if (!this.inBounds(x, y)) {
+      return -1;
+    } else {
+      return y * this.grid.width + x;
+    }
   }
 
-  inBounds(i) {
+  inBounds(x, y) {
     const [x, y] = this.iToCoord(i);
     const [width, height] = [this.grid.width, this.grid.height];
     return (x >= 0 && x < width) && (y >= 0 && y < height);
@@ -133,7 +137,7 @@ export default class RuleSet {
           }
         }
 
-        if (!this.inBounds(inFront)) {
+        if (inFront < 0) {
           throw {
             type: 'dead',
             reason: 'outside'
@@ -161,7 +165,7 @@ export default class RuleSet {
 
         if (
           this.inventory.includes(InventoryTypes.Axe) &&
-          this.inBounds(inFront) &&
+          inFront >= 0 &&
           feature === FeatureTypes.Tree
         ) {
           // chop down the tree
@@ -178,7 +182,7 @@ export default class RuleSet {
 
         if (
           this.inventory.includes(InventoryTypes.Key) &&
-          this.inBounds(inFront) &&
+          inFront >= 0 &&
           feature === FeatureTypes.Door
         ) {
           // unlock the door
