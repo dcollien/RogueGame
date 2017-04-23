@@ -148,7 +148,7 @@ export default class RogueGame {
         ">": "assets/player-right.png",
         "Raft": "assets/raft.png",
         "Unseen": {fill: 'rgba(0, 0, 0, 0.4)', stroke: 'rgba(96, 96, 96, 0.8)'},
-        "Unvisited": {fill: 'rgba(0, 0, 0, 0.6)', stroke: 'rgba(32, 32, 32, 0.8)'}
+        "Unvisited": {fill: 'rgba(0, 0, 0, 0.8)', stroke: 'rgba(32, 32, 32, 0.8)'}
       }
     });
   }
@@ -392,6 +392,11 @@ export default class RogueGame {
     }
 
     return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, extrasLayer, playerLayer, visibleLayer, visitedLayer, null];
+  }
+
+  revealMap() {
+    this.visited = Array(this.grid.width * this.grid.height).fill(null);
+    this.update('Revealed Map');
   }
 
   getWindow() {

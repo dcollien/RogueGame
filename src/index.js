@@ -52,6 +52,8 @@ window.onload = () => {
       case 'Q'.charCodeAt(0): game.performAction('c'); break;
       case 'E'.charCodeAt(0): game.performAction('u'); break;
       case 'S'.charCodeAt(0): game.performAction('b'); break;
+
+      case '0'.charCodeAt(0): game.revealMap(); break;
       default: break;
     }
   }
