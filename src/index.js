@@ -8,9 +8,26 @@ window.onload = () => {
   let gameState = getEl('edit-text').value;
 
   const canvas = getEl('gameCanvas');
-  const game = new RogueGame(canvas, gameState);
+  const spriteSheet = 'assets/sprites.png';
+  const game = new RogueGame(canvas, gameState, spriteSheet);
   const gridWorld = game.gridWorld;
   let log = '';
+
+  const inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
+  const iconPositions = {
+    axe: [0, 0],
+    key: [2, 2],
+    dynamite: [6, 0],
+    raft: [3, 3],
+    gold: [7, 0]
+  };
+  inventoryIcons.forEach(icon => {
+    const pos = iconPositions[icon.id];
+    if (pos) {
+      icon.style.backgroundImage = `url("${spriteSheet}")`;
+      icon.style.backgroundPosition = `${-pos[0] * 64}px ${-pos[1] * 64}px`;
+    }
+  });
 
   const actionButtons = {
     l: getEl('action-l'),
@@ -165,6 +182,7 @@ window.onload = () => {
       getEl('editor').style.display = 'none';
       isEditorOpen = false;
     } catch (err) {
+      throw err;
       alert(err);
     }
   };

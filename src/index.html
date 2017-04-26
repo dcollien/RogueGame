@@ -63,7 +63,6 @@
             line-height: normal;
             text-align: right;
             color: white;
-            padding-right: 2px;
         }
 
         #tools {
@@ -82,25 +81,6 @@
         #tools li:hover {
             background-color: #eee;
             cursor: pointer;
-        }
-
-        #axe {
-            background-image: url('assets/axe.png');
-        }
-        #key {
-            background-image: url('assets/key.png');
-        }
-        #stone {
-            background-image: url('assets/rock.png');
-        }
-        #gold {
-            background-image: url('assets/gold.png');
-        }
-        #raft {
-            background-image: url('assets/raft.png');
-        }
-        #dynamite {
-            background-image: url('assets/dynamite.png');
         }
 
         #log {
@@ -211,8 +191,8 @@
             <ul class="panel" id="inventory">
                 <li id="axe" style="display: none;"></li>
                 <li id="key" style="display: none;"></li>
-                <li id="stone" style="display: none;"></li>
                 <li id="dynamite" style="display: none;"></li>
+                <li id="stone" style="display: none;"></li>
                 <li id="raft" style="display: none;"></li>
                 <li id="gold" style="display: none;"></li>
             </ul>
@@ -233,15 +213,16 @@
         <div id="close-editor"><i class="fa fa-times" aria-hidden="true"></i></div>
         <div id="editor-pane">
 <textarea id="edit-text">
+~~~~~~~~~~
    d~*****
 -***~*d*T*
- Ta*~***~*
->dT*~*g*d-
-****~***~T
+ *a*~***~*
+>dT*~*g- *
+****~***~~
 ~~~~~~~~~~
-~TTTTT~***
-~TTTTT~* d
-~TTkTT~*dT
+~~~~~****~
+~TTT~*~d*~
+~TdT~*kT*~
 </textarea>
         </div>
         <div id="editor-save">Save <i class="fa fa-upload" aria-hidden="true"></i></div>

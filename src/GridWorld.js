@@ -40,11 +40,18 @@ export default class GridWorld extends Game {
       }
     }
     this.gridPan = initData.pan || [Math.floor(gridWidth/2), Math.floor(gridHeight/2)];
-    this.loadSprites(initData.sprites)
+    this.loadSprites(initData.sprites, initData.spritesheet)
     this.hasModified = true;
   }
 
-  loadSprites(sprites) {
+  changeLayers(layers=this.grid, width=this.gridWidth, height=this.gridHeight, size=this.gridSize) {
+    this.grid = layers;
+    this.gridWidth = width;
+    this.gridHeight = height;
+    this.gridSize = size;
+  }
+
+  loadSprites(sprites, spritesheet) {
     this.sprites = sprites || {};
     Object.keys(this.sprites).forEach(key => {
       if (typeof this.sprites[key] === 'string') {
@@ -54,6 +61,12 @@ export default class GridWorld extends Game {
         this.sprites[key] = image;
       }
     });
+
+    if (spritesheet) {
+      this.spritesheet = new Image();
+      this.spritesheet.src = spritesheet;
+      this.spritesheet.onload = () => this.hasModified = true;
+    }
   }
 
   update(dt) {
@@ -149,6 +162,12 @@ export default class GridWorld extends Game {
           if (sprite.stroke) {
             ctx.strokeStyle = sprite.stroke;
             ctx.strokeRect(x, y, scale, scale);
+          }
+          if (sprite.sheet) {
+            ctx.drawImage(this.spritesheet,
+              sprite.sheet.x * scale, sprite.sheet.y * scale, scale, scale,
+              x, y, scale, scale
+            );
           }
         } else {
           textWidth = ctx.measureText(layer[gridI]).width;

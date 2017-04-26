@@ -15,7 +15,7 @@ class Tile {
       ' ': [TileTypes.Ground, FeatureTypes.Empty],
       '-': [TileTypes.Wall,   FeatureTypes.Door],
       '!': [TileTypes.Wall,   FeatureTypes.DoorOpen], // extra, shimmed in
-      '*': [TileTypes.Wall,   FeatureTypes.Empty],
+      '*': [TileTypes.Wall,   FeatureTypes.Wall],
       '~': [TileTypes.Water,  FeatureTypes.Empty],
       'O': [TileTypes.Water,  FeatureTypes.Stone],
       'd': [TileTypes.Ground, FeatureTypes.Dynamite],
@@ -30,46 +30,75 @@ class Tile {
     this.orientation = orientation;
   }
 
-  getWallSymbol(feature, orientation, layer) {
-    let prefix = null;
-    let suffix = null;
+  getLinkingType() {
+    if (this.orientation === null) return null;
 
-    const isH = orientation.includes('H'); // horiz
-    const isV = orientation.includes('V'); // vert
-    const isE = orientation.includes('E'); // bottom-end
-    const isA = orientation.includes('A'); // nothing left/right
+    const {linkN, linkS, linkE, linkW} = this.orientation;
+    const [n, s, e, w] = [linkN, linkS, linkE, linkW];
 
-    const isDoor = (this.feature === FeatureTypes.DoorOpen || this.feature === FeatureTypes.Door);
+    console.log('Linking', n, s, e, w);
+    // Name for every linking type, as a combination of N/S/E/W
+    const tileCondition = {
+      X:  n &&  s &&  e &&  w,
 
-    if (layer === 0) {
-      if (isH) {
-        suffix = 'H';
-      } else if (isA && isE && !isDoor) {
-        suffix = 'VE';
-      } else {
-        suffix = 'V';
-      }
-    } else if (layer === 1) {
-      if (isV && !isE && !isA) {
-        suffix = 'V';
-      }
+      WX: n &&  s &&  e && !w,
+      EX: n &&  s && !e &&  w,
+      SX: n && !s &&  e &&  w,
+      NX:!n &&  s &&  e &&  w,
+
+      NW:!n &&  s &&  e && !w,
+      NE:!n &&  s && !e &&  w,
+      SW: n && !s &&  e && !w,
+      SE: n && !s && !e &&  w,
+
+      NS: n &&  s && !e && !w,
+      EW:!n && !s &&  e &&  w,
+
+      S:  n && !s && !e && !w,
+      N: !n &&  s && !e && !w,
+      W: !n && !s &&  e && !w,
+      E: !n && !s && !e &&  w,
+
+      A: !n && !s && !e && !w
+    };
+
+    return Object.keys(tileCondition).filter((key) => tileCondition[key])[0];
+  }
+
+  getBoundingType(isGround=false) {
+    if (this.orientation === null) return null;
+
+    const {
+      waterN, waterS, waterE, waterW,
+      groundN, groundS, groundE, groundW
+    } = this.orientation;
+
+    const [n, s, e, w] = isGround ?
+      [groundN, groundS, groundE, groundW] :
+      [waterN, waterS, waterE, waterW];
+
+    // Name for every bounding type, as a combination of N/S/E/W
+    const tileCondition = {
+      NW:!n &&  s &&  e && !w,
+      NE:!n &&  s && !e &&  w,
+      SW: n && !s &&  e && !w,
+      SE: n && !s && !e &&  w,
+
+      SU:  n && !s && !e && !w,
+      NU: !n &&  s && !e && !w,
+      WU: !n && !s &&  e && !w,
+      EU: !n && !s && !e &&  w,
+
+      O: !n && !s && !e && !w
+    };
+
+    const result = Object.keys(tileCondition).filter((key) => tileCondition[key]);
+
+    if (result.length === 1) {
+      return result[0];
+    } else {
+      return null;
     }
-
-    if (suffix) {
-      if (this.feature === FeatureTypes.Door && layer === 0) {
-        prefix = 'DC' + suffix;
-      } else if (this.feature === FeatureTypes.DoorOpen && layer === 0) {
-        prefix = 'DO' + suffix;
-      } else {
-        prefix = suffix;
-      }
-    }
-
-    if (prefix) {
-      prefix = prefix + '-Wall';
-    }
-
-    return prefix;
   }
 
   getLayer(layer) {
@@ -77,11 +106,15 @@ class Tile {
     let key = null;
 
     if (layer === 0) {
-      if (this.tile === TileTypes.Water || this.tile === TileTypes.Ground) {
-        key = Symbol.keyFor(this.tile);
+      if (this.tile === TileTypes.Water) {
+        key = Symbol.keyFor(TileTypes.Water);
       } else {
-        // for putting ground under doorways
         key = Symbol.keyFor(TileTypes.Ground);
+      }
+
+      const bounding = this.getBoundingType(this.tile !== TileTypes.Water);
+      if (bounding) {
+        key = bounding + '-' + key;
       }
     } else if (layer === 1 && this.tile !== TileTypes.Wall) {
       key = Symbol.keyFor(this.tile);
@@ -94,11 +127,19 @@ class Tile {
 
       if (key !== null && prefix !== null) {
         key = prefix + '-' + key;
+      } else {
+        key = null;
       }
     } else if (layer === 2 && this.tile === TileTypes.Wall) {
-      key = this.getWallSymbol(this.feature, this.orientation, 0);
-    } else if (layer === 3 && this.tile === TileTypes.Wall) {
-      key = this.getWallSymbol(this.feature, this.orientation, 1);
+      let linking = this.getLinkingType();
+      if (this.feature === FeatureTypes.Door || this.feature === FeatureTypes.DoorOpen) {
+        if (['S', 'N', 'SX', 'NX', 'NS'].includes(linking)) {
+          linking = 'NS';
+        } else {
+          linking = 'EW';
+        }
+      }
+      key = linking + '-' + Symbol.keyFor(this.feature);
     }
 
     return key;
@@ -120,50 +161,99 @@ export default class RogueGame {
       "size": 64,
       "pan": [width / 2, height / 2],
       "grid": layers,
+      "spritesheet": "assets/sprites.png",
       "sprites": {
-        "Ground": "assets/grass.png",
-        "Tree-Ground": "assets/tree.png",
-        "Dynamite-Ground": "assets/dynamite.png",
-        "Stone-Ground": "assets/rock.png",
-        "Wilson-Ground": "assets/wilson.png",
-        "Stone-Water": "assets/rock_water.png",
-        "Exploded-Ground": "assets/burnt_grass.png",
-        "Water": "assets/water.png",
-        "H-Wall": "assets/wall-h.png",
-        "V-Wall": "assets/wall-v.png",
-        "T-Wall": "assets/wall-top.png",
-        "VE-Wall": "assets/wall-end-v.png",
-        "DCH-Wall": "assets/door-closed-h.png",
-        "DOH-Wall": "assets/door-open-h.png",
-        "DCV-Wall": "assets/door-closed-v.png",
-        "DOV-Wall": "assets/door-open-v.png",
-        "Stump-Ground": "assets/stump.png",
-        "Axe-Ground": "assets/axe.png",
-        "Key-Ground": "assets/key.png",
-        "Gold-Ground": "assets/gold.png",
-        "Start-Ground": "assets/start.png",
-        "^": "assets/player-up.png",
-        "v": "assets/player-down.png",
-        "<": "assets/player-left.png",
-        ">": "assets/player-right.png",
-        "Raft": "assets/raft.png",
+        "Axe-Ground":      {sheet: {x: 0, y: 0}},
+        "Exploded-Ground": {sheet: {x: 1, y: 0}},
+        "EW-Door":         {sheet: {x: 2, y: 0}},
+        "NS-Door":         {sheet: {x: 3, y: 0}},
+        "EW-DoorOpen":     {sheet: {x: 4, y: 0}},
+        "NS-DoorOpen":     {sheet: {x: 5, y: 0}},
+        "Dynamite-Ground": {sheet: {x: 6, y: 0}},
+        "Gold-Ground":     {sheet: {x: 7, y: 0}},
+
+        "EU-Ground": {sheet: {x: 0, y: 1}},
+        "NE-Ground": {sheet: {x: 1, y: 1}},
+        "NU-Ground": {sheet: {x: 2, y: 1}},
+        "NW-Ground": {sheet: {x: 3, y: 1}},
+        "O-Ground":  {sheet: {x: 4, y: 1}},
+        "SE-Ground": {sheet: {x: 5, y: 1}},
+        "SU-Ground": {sheet: {x: 6, y: 1}},
+        "SW-Ground": {sheet: {x: 7, y: 1}},
+
+        "WU-Ground":  {sheet: {x: 0, y: 2}},
+        "Ground":     {sheet: {x: 1, y: 2}},
+        "Key-Ground": {sheet: {x: 2, y: 2}},
+
+        "a>": {sheet: {x: 3, y: 2}},
+        "a^": {sheet: {x: 4, y: 2}},
+        "av": {sheet: {x: 5, y: 2}},
+        "a<": {sheet: {x: 6, y: 2}},
+        ">":  {sheet: {x: 7, y: 2}},
+        "^":  {sheet: {x: 0, y: 3}},
+        "v":  {sheet: {x: 1, y: 3}},
+        "<":  {sheet: {x: 2, y: 3}},
+
+        "Raft": {sheet: {x: 3, y: 3}},
+
+        "Start-Ground": {sheet: {x: 4, y: 3}},
+        "Stump-Ground": {sheet: {x: 5, y: 3}},
+        "Tree-Ground":  {sheet: {x: 6, y: 3}},
+
+        "A-Wall": {sheet: {x: 7, y: 3}},
+
+        "E-Wall":  {sheet: {x: 0, y: 4}},
+        "EW-Wall": {sheet: {x: 1, y: 4}},
+        "EX-Wall": {sheet: {x: 2, y: 4}},
+
+        "N-Wall":  {sheet: {x: 3, y: 4}},
+        "NE-Wall": {sheet: {x: 4, y: 4}},
+        "NS-Wall": {sheet: {x: 5, y: 4}},
+        "NW-Wall": {sheet: {x: 6, y: 4}},
+        "NX-Wall": {sheet: {x: 7, y: 4}},
+
+        "S-Wall":  {sheet: {x: 0, y: 5}},
+        "SE-Wall": {sheet: {x: 1, y: 5}},
+        "SW-Wall": {sheet: {x: 2, y: 5}},
+        "SX-Wall": {sheet: {x: 3, y: 5}},
+
+        "W-Wall":  {sheet: {x: 4, y: 5}},
+        "WX-Wall": {sheet: {x: 5, y: 5}},
+        "X-Wall":  {sheet: {x: 6, y: 5}},
+
+        "EU-Water": {sheet: {x: 7, y: 5}},
+        "NE-Water": {sheet: {x: 0, y: 6}},
+        "NU-Water": {sheet: {x: 1, y: 6}},
+        "NW-Water": {sheet: {x: 2, y: 6}},
+        "O-Water":  {sheet: {x: 3, y: 6}},
+        "SE-Water": {sheet: {x: 4, y: 6}},
+        "SU-Water": {sheet: {x: 5, y: 6}},
+        "SW-Water": {sheet: {x: 6, y: 6}},
+        "WU-Water": {sheet: {x: 7, y: 6}},
+        "Water": {sheet: {x: 0, y: 7}},
+        "Wilson-Ground": {sheet: {x: 1, y: 7}},
+
         "Unseen": {fill: 'rgba(0, 0, 0, 0.4)', stroke: 'rgba(96, 96, 96, 0.8)'},
         "Unvisited": {fill: 'rgba(0, 0, 0, 0.8)', stroke: 'rgba(32, 32, 32, 0.8)'}
       }
     });
   }
 
-  loadState(stateString, visited=null, inventory=null, explosions=null) {
+  loadState(stateString, visited=null, inventory=null, explosions=null, isStartingState=true) {
     this.explosions = [];
 
     if (explosions) {
       this.explosions = explosions;
     }
 
+    if (isStartingState) {
+      this.startingState = null;
+    }
+
     try {
       this.grid = this.parse(stateString);
     } catch (err) {
-      throw "Unable to parse the map.";
+      throw err; //"Unable to parse the map.";
     }
 
     this.isGameOver = false;
@@ -236,7 +326,10 @@ export default class RogueGame {
     this.updateVisited(this.grid);
 
     if (this.gridWorld) {
-      this.gridWorld.grid = this.createLayers(this.grid);
+      const layers = this.createLayers(this.grid);
+      const [width, height] = [this.grid.width, this.grid.height];
+
+      this.gridWorld.changeLayers(layers, width, height);
       this.gridWorld.hasModified = true;
     }
 
@@ -313,44 +406,50 @@ export default class RogueGame {
 
   calculateOrientation(cell, i, mapData, width, height) {
     const wallFeatures = ['-', '!', '*'];
+    let orientation = {};
 
-    let orientation = null;
-
-    const wallPresent = (x, y) => {
+    const featurePresent = (x, y, features, notFeatures) => {
       if ((x >= 0 && x < width) && (y >= 0 && y < height)) {
-        return wallFeatures.includes(mapData[y * width + x]);
+        if (features) {
+          return features.includes(mapData[y * width + x]);
+        } else {
+          return !notFeatures.includes(mapData[y * width + x]);
+        }
       } else {
-        return false;
+        if (!features || features.includes('~')) {
+          return true;
+        } else {
+          return false;
+        }
       }
     }
 
+    const y = Math.floor(i / width);
+    const x = (i % width);
+
     if (wallFeatures.includes(cell)) {
-      orientation = [];
+      Object.assign(orientation, {
+        linkN: featurePresent(x, y - 1, wallFeatures),
+        linkS: featurePresent(x, y + 1, wallFeatures),
+        linkE: featurePresent(x + 1, y, wallFeatures),
+        linkW: featurePresent(x - 1, y, wallFeatures)
+      });
+    }
 
-      const y = Math.floor(i / width);
-      const x = (i % width);
-
-      const above = wallPresent(x, y - 1);
-      const below = wallPresent(x, y + 1);
-      const left  = wallPresent(x - 1, y);
-      const right = wallPresent(x + 1, y);
-
-      if (above || below) {
-        orientation.push('V'); // vertical
-      }
-      if (left || right) {
-        orientation.push('H'); // horizontal
-      }
-      if (above && !below) {
-        orientation.push('E'); // bottom end
-      }
-      if ((above || below) && (!left && !right)) {
-        orientation.push('A'); // alone
-      }
-
-      if (orientation.length === 0) {
-        orientation.push('H');
-      }
+    if (cell === '~') {
+      Object.assign(orientation, {
+        waterN: featurePresent(x, y - 1, ['~']),
+        waterS: featurePresent(x, y + 1, ['~']),
+        waterE: featurePresent(x + 1, y, ['~']),
+        waterW: featurePresent(x - 1, y, ['~'])
+      });
+    } else {
+      Object.assign(orientation, {
+        groundN: featurePresent(x, y - 1, null, ['~']),
+        groundS: featurePresent(x, y + 1, null, ['~']),
+        groundE: featurePresent(x + 1, y, null, ['~']),
+        groundW: featurePresent(x - 1, y, null, ['~'])
+      });
     }
 
     return orientation;
@@ -364,15 +463,19 @@ export default class RogueGame {
   createLayers(grid) {
     const backgroundLayer = grid.tiles.map(tile => tile.getLayer(0));
     const foregroundLayer = grid.tiles.map(tile => tile.getLayer(1));
-    const wallLayer1      = grid.tiles.map(tile => tile.getLayer(2));
-    const wallLayer2      = grid.tiles.map(tile => tile.getLayer(3));
+    const wallLayer       = grid.tiles.map(tile => tile.getLayer(2));
     const extrasLayer     = Array(grid.width * grid.height).fill(null);
     const playerLayer     = Array(grid.width * grid.height).fill(null);
     const visibleLayer    = Array(grid.width * grid.height).fill('Unseen');
     const visitedLayer    = this.visited;
 
     if (!this.isGameOver) {
-      playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+
+      if (this.inventory.includes(InventoryTypes.Axe)) {
+        playerLayer[grid.player.index] = 'a' + PlayerChars[grid.player.orientation];
+      } else {
+        playerLayer[grid.player.index] = PlayerChars[grid.player.orientation];
+      }
       if (
         this.inventory.includes(InventoryTypes.Raft) &&
         grid.tiles[grid.player.index].tile === TileTypes.Water
@@ -391,7 +494,7 @@ export default class RogueGame {
       }
     }
 
-    return [backgroundLayer, foregroundLayer, wallLayer1, wallLayer2, extrasLayer, playerLayer, visibleLayer, visitedLayer, null];
+    return [backgroundLayer, foregroundLayer, wallLayer, extrasLayer, playerLayer, visibleLayer, visitedLayer, null];
   }
 
   revealMap() {

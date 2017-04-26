@@ -11,6 +11,7 @@ export const FeatureTypes = {
   Tree: Symbol.for('Tree'),
   Stump: Symbol.for('Stump'), // extra, shimmed in (for aesthetics)
   Start: Symbol.for('Start'), // extra, shimmed in (for aesthetics)
+  Wall: Symbol.for('Wall'),
   Door: Symbol.for('Door'),
   DoorOpen: Symbol.for('DoorOpen'), // extra, shimmed in (for aesthetics)
   Stone: Symbol.for('Stone'),

@@ -44,22 +44,22 @@ export default class RuleSet {
     return (x >= 0 && x < width) && (y >= 0 && y < height);
   }
 
-  up(i) {
+  north(i) {
     const [x, y] = this.iToCoord(i);
     return this.coordToI([x, y-1]);
   }
 
-  down(i) {
+  south(i) {
     const [x, y] = this.iToCoord(i);
     return this.coordToI([x, y+1]);
   }
 
-  left(i) {
+  west(i) {
     const [x, y] = this.iToCoord(i);
     return this.coordToI([x-1, y]);
   }
 
-  right(i) {
+  east(i) {
     const [x, y] = this.iToCoord(i);
     return this.coordToI([x+1, y]);
   }
@@ -72,7 +72,7 @@ export default class RuleSet {
     const dir = this.grid.player.orientation;
     const index = this.grid.player.index;
     const facing = [
-      'up', 'right', 'down', 'left'
+      'north', 'east', 'south', 'west'
     ][dir];
     const inFront = this[facing](index);
 
@@ -123,7 +123,7 @@ export default class RuleSet {
         } else if (tile === TileTypes.Wall) {
           if (feature === FeatureTypes.DoorOpen) {
             canMove = true;
-          } else if (feature === FeatureTypes.Empty) {
+          } else if (feature === FeatureTypes.Wall) {
             message = 'Walked into a wall.';
           } else if (feature === FeatureTypes.Door) {
             message = 'Door is locked.';
@@ -223,15 +223,19 @@ export default class RuleSet {
           this.explosions.push(inFront);
 
           // hack to make walls click together properly
-          const tileAboveIndex = this.up(inFront);
-          const tileAbove = this.grid.tiles[tileAboveIndex];
-          if (tileAboveIndex >= 0 && tileAbove.tile === TileTypes.Wall) {
-            const verticalOverlay = tileAbove.orientation.indexOf('V');
-            if (verticalOverlay >= 0) {
-              tileAbove.orientation.splice(verticalOverlay, 1);
-              tileAbove.orientation.push('E');
+          const tileDirs = {
+            n: [this.north(inFront), 'linkS'],
+            s: [this.south(inFront), 'linkN'],
+            e: [this.east(inFront), 'linkW'],
+            w: [this.west(inFront), 'linkE']
+          };
+          Object.keys(tileDirs).forEach(key => {
+            const [index, link] = tileDirs[key];
+            const cell = this.grid.tiles[index];
+            if (index >= 0 && cell.tile === TileTypes.Wall) {
+              cell.orientation[link] = false;
             }
-          }
+          });
 
           const inventoryAt = this.inventory.indexOf(InventoryTypes.Dynamite);
           this.inventory.splice(inventoryAt, 1);
