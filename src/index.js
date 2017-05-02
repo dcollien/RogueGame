@@ -66,10 +66,11 @@ const init = () => {
         const bounds = tmpCtx.measureText(rows[0]);
         tempCanvas.width = bounds.width;
         tempCanvas.height = rows.length * size;
+        const ySize = (bounds.width/rows[0].length);
         tmpCtx.font = size + 'px monospace';
 
         rows.forEach((row, i) => {
-          tmpCtx.fillText(row, 0, i * size);
+          tmpCtx.fillText(row, 0, i * ySize);
         })
         const thumbnail = tempCanvas.toDataURL();
 

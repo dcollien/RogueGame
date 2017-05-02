@@ -119,14 +119,14 @@
 	        var bounds = tmpCtx.measureText(rows[0]);
 	        tempCanvas.width = bounds.width;
 	        tempCanvas.height = rows.length * size;
+	        var ySize = bounds.width / rows[0].length;
 	        tmpCtx.font = size + 'px monospace';
 	
 	        rows.forEach(function (row, i) {
-	          tmpCtx.fillText(row, 0, i * size);
+	          console.log('row:', row);
+	          tmpCtx.fillText(row, 0, i * ySize);
 	        });
 	        var thumbnail = tempCanvas.toDataURL();
-	
-	        console.log('THUMBY', tempCanvas.width, tempCanvas.height, thumbnail);
 	
 	        OL.user.share('widget', {
 	          thumbnail: thumbnail,
