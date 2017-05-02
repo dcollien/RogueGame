@@ -34,7 +34,7 @@ export default class Game {
 
     window.onresize = (e) => {
       this.canvas.width = window.innerWidth
-      this.canvas.height = window.innerHeight
+      this.canvas.height = Math.max(window.innerHeight, 600);
       this.width = this.canvas.width
       this.height = this.canvas.height
     };

@@ -5,7 +5,7 @@ module.exports = {
 
   entry: {
     javascript: "./index.js",
-    html: "./index.html",
+    html: "./display.html",
   },
 
   output: {

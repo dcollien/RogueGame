@@ -1,108 +1,169 @@
 import RogueGame from './RogueGame.js';
 import {InventoryTypes} from './Constants';
 
-window.onload = () => {
-  const getEl = (id) => document.getElementById(id);
-  let isEditorOpen = true;
+const OL = window.OL;
+const getEl = (id) => document.getElementById(id);
+
+const uploadFile = (file, url, onLoad, onError) => {
+  const xhr = new XMLHttpRequest();
+
+  xhr.onload = onLoad;
+  xhr.onerror = onError;
+
+  xhr.open('PUT', url);
+  xhr.overrideMimeType(file.type);
+  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+  xhr.setRequestHeader('Access-Control-Expose-Headers', 'Access-Control-Allow-Origin');
+  xhr.send(file);
+};
+
+const init = () => {
+  let artStyles = [];
+  let selectedStyle = 0;
+  if (OL) {
+    OL.resize(720);
+    OL.on('resize', () => {
+      window.onresize();
+    });
+    // Running as OpenLearning widget
+    let map;
+    let spriteSheets = [{
+        name: 'Robot in the Wilderness',
+        url: 'assets/sprites.png'
+      },
+      {
+        name: 'I drew this in MS Paint',
+        url: 'assets/sprites2.png'
+      }
+    ];
+
+    if (OL.mode === 'exhibit') {
+      map = OL.exhibit.data.map;
+      spriteSheets = OL.exhibit.data.sprites;
+      selectedStyle = OL.exhibit.data.selectedStyle || 0;
+    } else if (OL.user.data) {
+      map = OL.user.data.map;
+      spriteSheets = spriteSheets.concat(OL.user.data.sprites || []);
+      selectedStyle = OL.user.data.selectedStyle || 0;
+
+      const shareButton = getEl('editor-share');
+      shareButton.style.display = '';
+      shareButton.onclick = () => {
+        const mapVal = getEl('edit-text').value;
+        const rows = mapVal.trim().split('\n');
+
+        if (rows.length === 0) {
+          alert('Please enter a map to share');
+          return;
+        }
+
+        const tempCanvas = document.createElement('canvas');
+        const tmpCtx = tempCanvas.getContext('2d');
+        const size = 14;
+
+        tmpCtx.fillStyle = 'black';
+        tmpCtx.font = size + 'px monospace';
+        const bounds = tmpCtx.measureText(rows[0]);
+        tempCanvas.width = bounds.width;
+        tempCanvas.height = rows.length * size;
+        tmpCtx.font = size + 'px monospace';
+
+        rows.forEach((row, i) => {
+          tmpCtx.fillText(row, 0, i * size);
+        })
+        const thumbnail = tempCanvas.toDataURL();
+
+        OL.user.share('widget', {
+          thumbnail: thumbnail,
+          map: mapVal,
+          sprites: artStyles,
+          selectedStyle: selectedStyle
+        });
+      };
+    }
+
+    if (map) {
+      getEl('edit-text').value = map;
+    }
+
+    if (spriteSheets && spriteSheets.length > 0) {
+      artStyles = spriteSheets;
+    }
+  }
+
+  const artStylesSelect = getEl('theme');
+  artStyles.forEach((style, i) => {
+    const option = document.createElement('option');
+    option.text = style.name;
+    option.value = style.url;
+    artStylesSelect.appendChild(option);
+  });
+
+  if (OL && OL.mode === 'display') {
+    const customOption = document.createElement('option');
+    customOption.text = 'Custom: Upload your own';
+    customOption.value = 'CUSTOM';
+    artStylesSelect.appendChild(customOption);
+
+    const uploadButton = getEl('theme-save');
+    uploadButton.onclick = () => {
+      const file = getEl('theme-file').files[0];
+
+      if (file) {
+        uploadButton.dataset.loading = 'true';
+        OL.files.create('sprites.png', function(response) {
+          var storageKey = response.storageKey;
+          var uploadURL  = response.uploadURL;
+          uploadFile(file, uploadURL, () => {
+            OL.files.getURLs([storageKey], (urls) => {
+              uploadButton.dataset.loading = 'false';
+              const newStyle = {
+                name: getEl('theme-name').value,
+                url: urls[0]
+              };
+              artStyles.unshift(newStyle);
+              const newOption = document.createElement('option');
+              newOption.text = newStyle.name;
+              newOption.value = newStyle.url;
+              artStylesSelect.insertBefore(newOption, artStylesSelect.firstChild);
+              artStylesSelect.value = newStyle.url;
+              selectedStyle = 0;
+              getEl('theme-upload').style.display = 'none';
+            });
+          });
+        });
+      }
+    };
+  }
+
+  artStylesSelect.onchange = (evt) => {
+    const selected = evt.target;
+    if (selected.selectedIndex >= artStyles.length) {
+      getEl('theme-upload').style.display = '';
+      getEl('theme-name').value = '';
+    } else {
+      getEl('theme-upload').style.display = 'none';
+      selectedStyle = selected.selectedIndex;
+    }
+  };
+
+  artStylesSelect.value = artStyles[selectedStyle].url;
+
+
+  let isEditorOpen = false;
 
   let gameState = getEl('edit-text').value;
 
   const canvas = getEl('gameCanvas');
-  const spriteSheet = 'assets/sprites.png';
-  const game = new RogueGame(canvas, gameState, spriteSheet);
-  const gridWorld = game.gridWorld;
+  let spriteSheet = artStyles[selectedStyle].url;
   let log = '';
-
-  const inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
-  const iconPositions = {
-    axe: [0, 0],
-    key: [2, 2],
-    dynamite: [6, 0],
-    raft: [3, 3],
-    gold: [7, 0]
-  };
-  inventoryIcons.forEach(icon => {
-    const pos = iconPositions[icon.id];
-    if (pos) {
-      icon.style.backgroundImage = `url("${spriteSheet}")`;
-      icon.style.backgroundPosition = `${-pos[0] * 64}px ${-pos[1] * 64}px`;
-    }
-  });
-
-  const actionButtons = {
-    l: getEl('action-l'),
-    r: getEl('action-r'),
-    f: getEl('action-f'),
-    c: getEl('action-c'),
-    u: getEl('action-u'),
-    b: getEl('action-b')
-  };
-
-  const actionHandler = (action) => (e) => game.performAction(action);
-
-  Object.keys(actionButtons).forEach((key) => {
-    actionButtons[key].onclick = actionHandler(key);
-  });
-
-  window.onblur = () => gridWorld.stop();
-  window.onfocus = () => gridWorld.run();
-  window.onresize = () => gridWorld.hasModified = true;
-  window.onkeydown = (e) => {
-    if (isEditorOpen) return;
-
-    const speed = 8;
-    switch (e.keyCode) {
-      case 38: gridWorld.pan(0, -speed); break;
-      case 40: gridWorld.pan(0,  speed); break;
-      case 37: gridWorld.pan(-speed, 0); break;
-      case 39: gridWorld.pan(speed,  0); break;
-      case 'L'.charCodeAt(0): game.performAction('l'); break;
-      case 'R'.charCodeAt(0): game.performAction('r'); break;
-      case 'F'.charCodeAt(0): game.performAction('f'); break;
-      case 'C'.charCodeAt(0): game.performAction('c'); break;
-      case 'U'.charCodeAt(0): game.performAction('u'); break;
-      case 'B'.charCodeAt(0): game.performAction('b'); break;
-
-      case 'A'.charCodeAt(0): game.performAction('l'); break;
-      case 'D'.charCodeAt(0): game.performAction('r'); break;
-      case 'W'.charCodeAt(0): game.performAction('f'); break;
-      case 'Q'.charCodeAt(0): game.performAction('c'); break;
-      case 'E'.charCodeAt(0): game.performAction('u'); break;
-      case 'S'.charCodeAt(0): game.performAction('b'); break;
-
-      case '0'.charCodeAt(0): game.revealMap(); break;
-      default: break;
-    }
-  }
-
   const updateLog = () => {
     const logDisplay = getEl('log');
     logDisplay.innerText = log.trim();
     logDisplay.scrollTop = logDisplay.scrollHeight;
   };
 
-  let dragStart = null;
-  canvas.onmousedown = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    dragStart = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      rect: rect
-    };
-    gridWorld.startDrag(dragStart.x, dragStart.y);
-  };
-  window.onmouseup = (e) => {
-    dragStart = null;
-  };
-  window.onmousemove = (e) => {
-    if (dragStart) {
-      gridWorld.moveDrag(
-        e.clientX - dragStart.rect.left,
-        e.clientY - dragStart.rect.top
-      );
-    }
-  };
-  game.onChange = (grid, inventory, visited, isGameOver, message, windowStr) => {
+  const onChange = (grid, inventory, visited, isGameOver, message, windowStr) => {
     getEl('agent-window').innerText = windowStr;
 
     const inventoryItems = [
@@ -163,29 +224,131 @@ window.onload = () => {
     }
   };
 
-  getEl('close-editor').onclick = () => {
+  const game = new RogueGame(canvas, gameState, spriteSheet, onChange);
+  const gridWorld = game.gridWorld;
+
+  const initIcons = () => {
+    const inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
+    const iconPositions = {
+      axe: [0, 0],
+      key: [2, 2],
+      dynamite: [6, 0],
+      raft: [3, 3],
+      gold: [7, 0]
+    };
+    inventoryIcons.forEach(icon => {
+      const pos = iconPositions[icon.id];
+      if (pos) {
+        icon.style.backgroundImage = `url("${spriteSheet}")`;
+        icon.style.backgroundPosition = `${-pos[0] * 64}px ${-pos[1] * 64}px`;
+      }
+    });
+  };
+  initIcons();
+
+  const actionButtons = {
+    l: getEl('action-l'),
+    r: getEl('action-r'),
+    f: getEl('action-f'),
+    c: getEl('action-c'),
+    u: getEl('action-u'),
+    b: getEl('action-b')
+  };
+
+  const actionHandler = (action) => (e) => game.performAction(action);
+
+  Object.keys(actionButtons).forEach((key) => {
+    actionButtons[key].onclick = actionHandler(key);
+  });
+
+  window.onblur = () => gridWorld.stop();
+  window.onfocus = () => gridWorld.run();
+  window.onresize = () => gridWorld.hasModified = true;
+  window.onkeydown = (e) => {
+    if (isEditorOpen) return;
+
+    const speed = 8;
+    switch (e.keyCode) {
+      case 38: gridWorld.pan(0, -speed); break;
+      case 40: gridWorld.pan(0,  speed); break;
+      case 37: gridWorld.pan(-speed, 0); break;
+      case 39: gridWorld.pan(speed,  0); break;
+      case 'L'.charCodeAt(0): game.performAction('l'); break;
+      case 'R'.charCodeAt(0): game.performAction('r'); break;
+      case 'F'.charCodeAt(0): game.performAction('f'); break;
+      case 'C'.charCodeAt(0): game.performAction('c'); break;
+      case 'U'.charCodeAt(0): game.performAction('u'); break;
+      case 'B'.charCodeAt(0): game.performAction('b'); break;
+
+      case 'A'.charCodeAt(0): game.performAction('l'); break;
+      case 'D'.charCodeAt(0): game.performAction('r'); break;
+      case 'W'.charCodeAt(0): game.performAction('f'); break;
+      case 'Q'.charCodeAt(0): game.performAction('c'); break;
+      case 'E'.charCodeAt(0): game.performAction('u'); break;
+      case 'S'.charCodeAt(0): game.performAction('b'); break;
+
+      case '0'.charCodeAt(0): game.revealMap(); break;
+      default: break;
+    }
+  }
+
+  let dragStart = null;
+  canvas.onmousedown = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    dragStart = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      rect: rect
+    };
+    gridWorld.startDrag(dragStart.x, dragStart.y);
+  };
+  window.onmouseup = (e) => {
+    dragStart = null;
+  };
+  window.onmousemove = (e) => {
+    if (dragStart) {
+      gridWorld.moveDrag(
+        e.clientX - dragStart.rect.left,
+        e.clientY - dragStart.rect.top
+      );
+    }
+  };
+
+  const closeEditor = () => {
     getEl('editor').style.display = 'none';
     isEditorOpen = false;
   };
-
-  getEl('edit').onclick = () => {
+  const openEditor = () => {
+    if (OL) OL.user.logInteraction();
     getEl('editor').style.display = '';
     isEditorOpen = true;
   };
 
-  getEl('editor-save').onclick = () => {
+  getEl('close-editor').onclick = closeEditor;
+  getEl('edit').onclick = openEditor;
+
+  const loadMap = () => {
     gameState = getEl('edit-text').value;
-    log = 'New map loaded.\n';
-    updateLog();
-    try {
-      game.loadState(gameState, [], []);
-      getEl('editor').style.display = 'none';
-      isEditorOpen = false;
-    } catch (err) {
-      throw err;
-      alert(err);
+    const theme = getEl('theme').value;
+
+    if (theme === 'CUSTOM') {
+      alert("No theme uploaded.");
+    } else {
+      try {
+        spriteSheet = theme;
+        gridWorld.changeSprites(theme);
+        initIcons();
+        game.loadState(gameState, [], []);
+        getEl('editor').style.display = 'none';
+        isEditorOpen = false;
+      } catch (err) {
+        //throw err;
+        alert(err);
+      }
     }
   };
+
+  getEl('editor-save').onclick = loadMap;
 
   getEl('reset').onclick = () => {
     log = 'Reset.\n';
@@ -198,4 +361,13 @@ window.onload = () => {
   };
 
   gridWorld.run();
+};
+
+
+window.onload = () => {
+  if (OL) {
+    OL(init);
+  } else {
+    init();
+  }
 };

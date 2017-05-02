@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.openlearning.io/openlearning.js"></script>
+    <script src="app.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        html, body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #toolbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background-color: white;
+            border-bottom: 1px solid #444;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            cursor: move;
+        }
+
+        .panel {
+            float: left;
+            padding: 5px;
+            margin: 0;
+        }
+
+        .panel li {
+            color: #444;
+            margin: 2px;
+            width: 64px;
+            height: 64px;
+            line-height: 64px;
+            text-align: center;
+            list-style: none;
+            border: 1px solid #ccc;
+        }
+
+        #instructions li {
+            float: left;
+            background-color: #f4f4f4;
+        }
+
+        #instructions li:hover {
+            background-color: #eee;
+            cursor: pointer;
+        }
+
+        #inventory li {
+            float: left;
+            background-color: #aaa;
+            border-color: #444;
+            line-height: normal;
+            text-align: right;
+            color: white;
+        }
+
+        #tools {
+            margin: 0;
+            padding: 2px 0;
+            float: right;
+        }
+
+        #tools li {
+            width: 72px;
+            height: 33px;
+            line-height: 33px;
+            background-color: #f4f4f4;
+        }
+
+        #tools li:hover {
+            background-color: #eee;
+            cursor: pointer;
+        }
+
+        #log {
+            float: right;
+            margin: 4px 0px;
+            height: 66px;
+            width: 200px;
+            border: 1px solid #888;
+            color: #666;
+            background-color: #f9f9f9;
+        }
+
+        #editor {
+            position: absolute;
+            top: 100px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            border: 1px solid #666;
+        }
+
+        #close-editor {
+            position: absolute;
+            right: 4px;
+            top: 2px;
+        }
+
+        #close-editor:hover {
+            cursor: pointer;
+            color: #666;
+        }
+
+        #editor-pane {
+            position: absolute;
+            top: 32px;
+            right: 10px;
+            left: 4px;
+            bottom: 48px;
+        }
+
+        #edit-text {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            font-family: monospace;
+            font-size: 18px;
+        }
+
+        #theme-chooser {
+            position: absolute;
+            left: 50%;
+            top: 4px;
+            height: 32px;
+            font-size: 12px;
+        }
+
+        #editor-save {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            width: 72px;
+            background-color: #eee;
+            color: #444;
+            border: 1px solid #666;
+        }
+
+        #editor-share {
+            position: absolute;
+            left: 4px;
+            bottom: 4px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            width: 72px;
+            background-color: #eee;
+            color: #444;
+            border: 1px solid #666;
+        }
+
+        #editor-save:hover {
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        #editor-share:hover {
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        #editor-title {
+            padding: 8px;
+        }
+
+        #minimap {
+            position: absolute;
+            left: 0px;
+            bottom: 0px;
+            padding: 5px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #minimap .panel {
+            margin-right: 12px;
+        }
+
+        #agent-window {
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #444;
+            resize: none;
+            line-height: 14px;
+            padding-left: 1em;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            overflow: hidden;
+            background-color: #444;
+            color: #eee;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        #theme-upload {
+            position: absolute;
+            top: 32px;
+            left: 50%;
+            width: 200px;
+            height: 100px;
+            background-color: #f4f4f4;
+            border: 1px solid black;
+            padding: 6px;
+        }
+
+        #theme-save {
+            float: right;
+            margin-top: 20px;
+            background-color: #eee;
+            color: #444;
+            border: 1px solid #666;
+            cursor: pointer;
+        }
+        #theme-save:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: relative;">
+        <canvas id="gameCanvas">
+            Not supported by this browser
+        </canvas>
+        <div id="toolbar">
+            <ul class="panel" id="instructions">
+                <li id="action-l">L <i class="fa fa-rotate-left" aria-hidden="true"></i></li>
+                <li id="action-r">R <i class="fa fa-rotate-right" aria-hidden="true"></i></li>
+                <li id="action-f">F <i class="fa fa-arrow-up" aria-hidden="true"></i></li>
+                <li id="action-c">C <i class="fa fa-cut" aria-hidden="true"></i></li>
+                <li id="action-u">U <i class="fa fa-unlock" aria-hidden="true"></i></li>
+                <li id="action-b">B <i class="fa fa-fire" aria-hidden="true"></i></li>
+            </ul>
+            <ul class="panel" id="inventory">
+                <li id="axe" style="display: none;"></li>
+                <li id="key" style="display: none;"></li>
+                <li id="dynamite" style="display: none;"></li>
+                <li id="stone" style="display: none;"></li>
+                <li id="raft" style="display: none;"></li>
+                <li id="gold" style="display: none;"></li>
+            </ul>
+        </div>
+    </div>
+    <div id="minimap">
+        <textarea rows="5" cols="5" id="agent-window"></textarea>
+        <ul class="panel" id="tools">
+            <li id="reset">Reset <i class="fa fa-refresh" aria-hidden="true"></i></li>
+            <li id="edit">Edit <i class="fa fa-edit" aria-hidden="true"></i></li>
+        </ul>
+        <textarea id="log"></textarea>
+        <br/>
+        <span style="float: right; font-size: 12px; color: #666; padding: 6px;">Bugs/suggestions: david@openlearning.com</span>
+    </div>
+    <div id="editor" style="display: none;">
+        <div id="editor-title">Map to use:</div>
+        <div id="close-editor"><i class="fa fa-times" aria-hidden="true"></i></div>
+        <div id="editor-pane">
+<textarea id="edit-text">
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~  d   *     T   a  ~~
+~~    *-*     ***    ~~
+~~****     v     ****~~
+~~TTT**         **TTT~~
+~~  $ **   k   **    ~~
+~~     **     **     ~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+</textarea>
+        </div>
+        <div id="theme-chooser">Art style: <select id="theme"></select></div>
+        <div id="editor-share" style="display: none;">Share <i class="fa fa-share" aria-hidden="true"></i></div>
+        <div id="editor-save">Save <i class="fa fa-upload" aria-hidden="true"></i></div>
+        <div id="theme-upload" style="display: none;">
+            <div style="font-size: 12px;">Name: <input type="text" id="theme-name"/></div>
+            <div><input type="file" id="theme-file"/></div>
+            <div id="theme-uploading" style="font-size: 12px; display: none;">Uploading...</div>
+            <button id="theme-save">Add Theme</button>
+            <br/>
+            <div style="font-size: 12px; float: left; padding-top: 10px;"><a href="assets/sprites2.png" target="_blank">Download sample sprite sheet.</a></div>
+        </div>
+    </div>
+</body>
+</html>

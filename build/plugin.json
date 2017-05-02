@@ -1,0 +1,28 @@
+{
+    "name": "Treasure Hunt",
+    "id": "ol/OpenLearning/ai-treasure",
+    "author": ["David Collien"],
+    "email": "david@openlearning.com",
+    "license": "ISC",
+    "version": "0.0.1",
+    "description": "Hunt for Treasure",
+    "categories": ["search", "computing", "ai"],
+    "setup": {},
+    "display": {
+        "main": "display.html",
+        "setup": "setup.html",
+        "exhibit": "display.html"
+    },
+
+    "sharing": true,
+
+    "completion": {
+        "settings": ["interaction"],
+        "progress": "open",
+        "default": "interaction"
+    },
+    "icon": {
+        "color": "#00ffcc",
+        "image": "Miscellaneous/Palm Tree"
+    }
+}

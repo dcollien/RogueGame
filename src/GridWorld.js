@@ -51,6 +51,17 @@ export default class GridWorld extends Game {
     this.gridSize = size;
   }
 
+  changeSprites(spriteSheetUrl) {
+    if (spriteSheetUrl) {
+      if (this.spritesheet && spriteSheetUrl === this.spritesheet.src) {
+        return;
+      }
+      this.spritesheet = new Image();
+      this.spritesheet.src = spriteSheetUrl;
+      this.spritesheet.onload = () => this.hasModified = true;
+    }
+  }
+
   loadSprites(sprites, spritesheet) {
     this.sprites = sprites || {};
     Object.keys(this.sprites).forEach(key => {
@@ -62,11 +73,7 @@ export default class GridWorld extends Game {
       }
     });
 
-    if (spritesheet) {
-      this.spritesheet = new Image();
-      this.spritesheet.src = spritesheet;
-      this.spritesheet.onload = () => this.hasModified = true;
-    }
+    this.changeSprites(spritesheet)
   }
 
   update(dt) {

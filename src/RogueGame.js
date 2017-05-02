@@ -9,17 +9,17 @@ class Tile {
       't': [TileTypes.Ground, FeatureTypes.Stump], // extra, shimmed in
       'a': [TileTypes.Ground, FeatureTypes.Axe],
       'k': [TileTypes.Ground, FeatureTypes.Key],
-      'o': [TileTypes.Ground, FeatureTypes.Stone],
-      'g': [TileTypes.Ground, FeatureTypes.Gold],
+      // 'o': [TileTypes.Ground, FeatureTypes.Stone],
+      '$': [TileTypes.Ground, FeatureTypes.Gold],
       'x': [TileTypes.Ground, FeatureTypes.Start], // extra, shimmed in
       ' ': [TileTypes.Ground, FeatureTypes.Empty],
       '-': [TileTypes.Wall,   FeatureTypes.Door],
       '!': [TileTypes.Wall,   FeatureTypes.DoorOpen], // extra, shimmed in
       '*': [TileTypes.Wall,   FeatureTypes.Wall],
       '~': [TileTypes.Water,  FeatureTypes.Empty],
-      'O': [TileTypes.Water,  FeatureTypes.Stone],
+      // 'O': [TileTypes.Water,  FeatureTypes.Stone],
       'd': [TileTypes.Ground, FeatureTypes.Dynamite],
-      'w': [TileTypes.Ground, FeatureTypes.Wilson],
+      'w': [TileTypes.Ground, FeatureTypes.Wilson], // ???
       'D': [TileTypes.Ground, FeatureTypes.Exploded] // extra, shimmed in
     };
 
@@ -36,7 +36,6 @@ class Tile {
     const {linkN, linkS, linkE, linkW} = this.orientation;
     const [n, s, e, w] = [linkN, linkS, linkE, linkW];
 
-    console.log('Linking', n, s, e, w);
     // Name for every linking type, as a combination of N/S/E/W
     const tileCondition = {
       X:  n &&  s &&  e &&  w,
@@ -147,9 +146,9 @@ class Tile {
 }
 
 export default class RogueGame {
-  constructor(canvas, stateString) {
+  constructor(canvas, stateString, spriteSheet, onChange) {
     this.canvas = canvas;
-
+    this.onChange = onChange;
     this.startingState = null;
     this.loadState(stateString);
     const layers = this.createLayers(this.grid);
@@ -161,7 +160,7 @@ export default class RogueGame {
       "size": 64,
       "pan": [width / 2, height / 2],
       "grid": layers,
-      "spritesheet": "assets/sprites.png",
+      "spritesheet": spriteSheet,
       "sprites": {
         "Axe-Ground":      {sheet: {x: 0, y: 0}},
         "Exploded-Ground": {sheet: {x: 1, y: 0}},
@@ -253,7 +252,7 @@ export default class RogueGame {
     try {
       this.grid = this.parse(stateString);
     } catch (err) {
-      throw err; //"Unable to parse the map.";
+      throw "Unable to parse the map.";
     }
 
     this.isGameOver = false;
@@ -278,7 +277,7 @@ export default class RogueGame {
       this.ruleset.setState(this.grid, this.inventory, this.explosions);
     }
 
-    this.update(null);
+    this.update('Map Loaded.');
   }
 
   getVisited() {
