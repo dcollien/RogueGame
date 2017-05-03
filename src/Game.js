@@ -33,10 +33,10 @@ export default class Game {
     this.context = this.canvas.getContext('2d');
 
     window.onresize = (e) => {
-      this.canvas.width = window.innerWidth
-      this.canvas.height = Math.max(window.innerHeight, 600);
-      this.width = this.canvas.width
-      this.height = this.canvas.height
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = Math.max(window.innerHeight, 720);
+      this.width = this.canvas.width;
+      this.height = this.canvas.height;
     };
     window.onresize();
 

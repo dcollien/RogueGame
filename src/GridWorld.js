@@ -190,6 +190,8 @@ export default class GridWorld extends Game {
     const ctx = this.context;
 
     ctx.clearRect(0, 0, this.width, this.height);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, this.width, this.height);
 
     let layer;
     for (layer of this.grid) {

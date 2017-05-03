@@ -253,6 +253,8 @@ export default class RuleSet {
 
     if (delegate) {
       delegate();
+    } else {
+      message = 'Unknown instruction.';
     }
 
     return message;

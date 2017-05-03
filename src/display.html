@@ -7,7 +7,10 @@
     <style>
         html, body {
             margin: 0;
+            padding: 0;
             font-family: sans-serif;
+            height: 720px;
+            overflow: hidden;
         }
 
         #toolbar {
@@ -16,7 +19,7 @@
             left: 0;
             width: 100%;
             height: 80px;
-            background-color: white;
+            background-color: rgba(80, 80, 80, 0.5);
             border-bottom: 1px solid #444;
         }
 
@@ -58,17 +61,18 @@
 
         #inventory li {
             float: left;
-            background-color: #aaa;
-            border-color: #444;
+            background-color: #ccc;
+            border-color: #fff;
+            border-radius: 10%;
             line-height: normal;
             text-align: right;
             color: white;
         }
 
         #tools {
+            float: right;
             margin: 0;
             padding: 2px 0;
-            float: right;
         }
 
         #tools li {
@@ -84,7 +88,6 @@
         }
 
         #log {
-            float: right;
             margin: 4px 0px;
             height: 66px;
             width: 200px;
@@ -183,13 +186,14 @@
             position: absolute;
             left: 0px;
             bottom: 0px;
-            padding: 5px;
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(80, 80, 80, 0.5);
         }
 
         #minimap .panel {
-            margin-right: 12px;
+            float: right;
+            margin: 0;
+            padding: 0;
         }
 
         #agent-window {
@@ -205,7 +209,7 @@
             background-color: #444;
             color: #eee;
             font-weight: bold;
-            margin-left: 5px;
+            margin: 5px;
         }
 
         #theme-upload {
@@ -230,11 +234,83 @@
         #theme-save:hover {
             background-color: #ddd;
         }
+
+        #instructions-run {
+            display: inline-block;
+            background-color: #eee;
+            color: #444;
+            border: 1px solid #888;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 12px;
+            width: 16px;
+            text-align: center;
+        }
+        #instructions-run:hover {
+            background-color: #ddd;
+        }
+
+        #instructions-input {
+            height: 16px;
+            padding: 2px;
+            width: 168px;
+        }
+
+        @media (max-width: 667px) {
+            .panel {
+                float: none;
+            }
+
+            #instructions .fa {
+                display: none;
+            }
+
+            #instructions li {
+                width: 24px;
+                height: 24px;
+                padding: 4px;
+                line-height: 24px;
+            }
+            #instructions {
+                display: block;
+                height: 32px;
+            }
+            #instructions-input {
+                width: 120px;
+            }
+            .button-text {
+                display: none;
+            }
+
+            #inventory li {
+                width: 32px;
+                height: 32px;
+            }
+
+            #toolbar {
+                height: 86px;
+            }
+
+            #log {
+                width: 124px;
+                height: 48px;
+            }
+
+            #tools li {
+                height: 24px;
+                width: 24px;
+                line-height: 24px;
+            }
+
+            #theme-chooser {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div style="position: relative;">
-        <canvas id="gameCanvas">
+        <canvas id="gameCanvas" height="720">
             Not supported by this browser
         </canvas>
         <div id="toolbar">
@@ -258,13 +334,20 @@
     </div>
     <div id="minimap">
         <textarea rows="5" cols="5" id="agent-window"></textarea>
-        <ul class="panel" id="tools">
-            <li id="reset">Reset <i class="fa fa-refresh" aria-hidden="true"></i></li>
-            <li id="edit">Edit <i class="fa fa-edit" aria-hidden="true"></i></li>
-        </ul>
-        <textarea id="log"></textarea>
-        <br/>
-        <span style="float: right; font-size: 12px; color: #666; padding: 6px;">Bugs/suggestions: david@openlearning.com</span>
+        <div class="panel" >
+            <textarea id="log"></textarea>
+            <ul id="tools">
+                <li id="reset"><span class="button-text">Reset </span><i class="fa fa-refresh" aria-hidden="true"></i></li>
+                <li id="edit"><span class="button-text">Edit </span><i class="fa fa-edit" aria-hidden="true"></i></li>
+            </ul>
+            <div id="agent-instructions">
+                <input type="text" id="instructions-input" placeholder="Instructions to run."/>
+                <div id="instructions-run">
+                    <i class="fa fa-step-forward" aria-hidden="true"></i>
+                </div>
+            </div>
+        </div>
+        <span style="font-size: 12px; color: #666; padding: 6px;">Bugs/suggestions: david@openlearning.com</span>
     </div>
     <div id="editor" style="display: none;">
         <div id="editor-title">Map to use:</div>

@@ -21,7 +21,7 @@ const init = () => {
   let artStyles = [];
   let selectedStyle = 0;
   if (OL) {
-    OL.resize(720);
+    OL.resize(720, true);
     OL.on('resize', () => {
       window.onresize();
     });
@@ -65,8 +65,8 @@ const init = () => {
         tmpCtx.font = size + 'px monospace';
         const bounds = tmpCtx.measureText(rows[0]);
         tempCanvas.width = bounds.width;
-        tempCanvas.height = rows.length * size;
-        const ySize = (bounds.width/rows[0].length);
+        const ySize = Math.floor(bounds.width/rows[0].length);
+        tempCanvas.height = rows.length * ySize;
         tmpCtx.font = size + 'px monospace';
 
         rows.forEach((row, i) => {
@@ -237,11 +237,17 @@ const init = () => {
       raft: [3, 3],
       gold: [7, 0]
     };
+    const gridSize = 64;
+    const gridWidth = 8;
+    const media = window.matchMedia("(max-width: 480px)");
     inventoryIcons.forEach(icon => {
       const pos = iconPositions[icon.id];
+      const size = media.matches ? 32 : 64;
+
       if (pos) {
         icon.style.backgroundImage = `url("${spriteSheet}")`;
-        icon.style.backgroundPosition = `${-pos[0] * 64}px ${-pos[1] * 64}px`;
+        icon.style.backgroundSize = `${size * gridWidth}px`;
+        icon.style.backgroundPosition = `${-pos[0] * size}px ${-pos[1] * size}px`;
       }
     });
   };
@@ -267,6 +273,7 @@ const init = () => {
   window.onresize = () => gridWorld.hasModified = true;
   window.onkeydown = (e) => {
     if (isEditorOpen) return;
+    if (document.activeElement.tagName === 'INPUT') return;
 
     const speed = 8;
     switch (e.keyCode) {
@@ -294,26 +301,53 @@ const init = () => {
   }
 
   let dragStart = null;
-  canvas.onmousedown = (e) => {
+  const startDrag = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
     dragStart = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: clientX - rect.left,
+      y: clientY - rect.top,
       rect: rect
     };
     gridWorld.startDrag(dragStart.x, dragStart.y);
   };
-  window.onmouseup = (e) => {
+  const endDrag = () => {
     dragStart = null;
   };
-  window.onmousemove = (e) => {
+  const moveDrag = (clientX, clientY) => {
     if (dragStart) {
       gridWorld.moveDrag(
-        e.clientX - dragStart.rect.left,
-        e.clientY - dragStart.rect.top
+        clientX - dragStart.rect.left,
+        clientY - dragStart.rect.top
       );
     }
   };
+  window.onmouseup = (e) => {
+    endDrag();
+  };
+  window.onmousemove = (e) => {
+    moveDrag(e.clientX, e.clientY);
+  };
+  canvas.onmousedown = (e) => {
+    startDrag(e.clientX, e.clientY);
+  };
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    startDrag(touch.clientX, touch.clientY);
+  });
+  canvas.addEventListener('touchend', (e) => {
+    endDrag();
+  });
+  canvas.addEventListener('touchcancel', (e) => {
+    endDrag();
+  });
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    moveDrag(touch.clientX, touch.clientY);
+  });
 
   const closeEditor = () => {
     getEl('editor').style.display = 'none';
@@ -321,6 +355,7 @@ const init = () => {
   };
   const openEditor = () => {
     if (OL) OL.user.logInteraction();
+
     getEl('editor').style.display = '';
     isEditorOpen = true;
   };
@@ -359,6 +394,15 @@ const init = () => {
     } catch (err) {
       alert(err);
     }
+  };
+
+  getEl('instructions-run').onclick = () => {
+    const val = getEl('instructions-input').value;
+    if (val.length === 0) {
+      return;
+    }
+    game.performAction(val[0].toLowerCase());
+    getEl('instructions-input').value = val.substring(1);
   };
 
   gridWorld.run();

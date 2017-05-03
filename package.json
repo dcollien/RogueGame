@@ -1,6 +1,6 @@
 {
   "name": "rogue-game",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Rogue-like Game Runner",
   "main": "index.js",
   "scripts": {

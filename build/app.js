@@ -76,7 +76,7 @@
 	  var artStyles = [];
 	  var selectedStyle = 0;
 	  if (OL) {
-	    OL.resize(720);
+	    OL.resize(720, true);
 	    OL.on('resize', function () {
 	      window.onresize();
 	    });
@@ -118,12 +118,11 @@
 	        tmpCtx.font = size + 'px monospace';
 	        var bounds = tmpCtx.measureText(rows[0]);
 	        tempCanvas.width = bounds.width;
-	        tempCanvas.height = rows.length * size;
-	        var ySize = bounds.width / rows[0].length;
+	        var ySize = Math.floor(bounds.width / rows[0].length);
+	        tempCanvas.height = rows.length * ySize;
 	        tmpCtx.font = size + 'px monospace';
 	
 	        rows.forEach(function (row, i) {
-	          console.log('row:', row);
 	          tmpCtx.fillText(row, 0, i * ySize);
 	        });
 	        var thumbnail = tempCanvas.toDataURL();
@@ -285,11 +284,17 @@
 	      raft: [3, 3],
 	      gold: [7, 0]
 	    };
+	    var gridSize = 64;
+	    var gridWidth = 8;
+	    var media = window.matchMedia("(max-width: 480px)");
 	    inventoryIcons.forEach(function (icon) {
 	      var pos = iconPositions[icon.id];
+	      var size = media.matches ? 32 : 64;
+	
 	      if (pos) {
 	        icon.style.backgroundImage = 'url("' + spriteSheet + '")';
-	        icon.style.backgroundPosition = -pos[0] * 64 + 'px ' + -pos[1] * 64 + 'px';
+	        icon.style.backgroundSize = size * gridWidth + 'px';
+	        icon.style.backgroundPosition = -pos[0] * size + 'px ' + -pos[1] * size + 'px';
 	      }
 	    });
 	  };
@@ -325,6 +330,7 @@
 	  };
 	  window.onkeydown = function (e) {
 	    if (isEditorOpen) return;
+	    if (document.activeElement.tagName === 'INPUT') return;
 	
 	    var speed = 8;
 	    switch (e.keyCode) {
@@ -370,23 +376,50 @@
 	  };
 	
 	  var dragStart = null;
-	  canvas.onmousedown = function (e) {
+	  var startDrag = function startDrag(clientX, clientY) {
 	    var rect = canvas.getBoundingClientRect();
 	    dragStart = {
-	      x: e.clientX - rect.left,
-	      y: e.clientY - rect.top,
+	      x: clientX - rect.left,
+	      y: clientY - rect.top,
 	      rect: rect
 	    };
 	    gridWorld.startDrag(dragStart.x, dragStart.y);
 	  };
-	  window.onmouseup = function (e) {
+	  var endDrag = function endDrag() {
 	    dragStart = null;
 	  };
-	  window.onmousemove = function (e) {
+	  var moveDrag = function moveDrag(clientX, clientY) {
 	    if (dragStart) {
-	      gridWorld.moveDrag(e.clientX - dragStart.rect.left, e.clientY - dragStart.rect.top);
+	      gridWorld.moveDrag(clientX - dragStart.rect.left, clientY - dragStart.rect.top);
 	    }
 	  };
+	  window.onmouseup = function (e) {
+	    endDrag();
+	  };
+	  window.onmousemove = function (e) {
+	    moveDrag(e.clientX, e.clientY);
+	  };
+	  canvas.onmousedown = function (e) {
+	    startDrag(e.clientX, e.clientY);
+	  };
+	  canvas.addEventListener('touchstart', function (e) {
+	    e.preventDefault();
+	    var touch = e.changedTouches[0];
+	    if (!touch) return;
+	    startDrag(touch.clientX, touch.clientY);
+	  });
+	  canvas.addEventListener('touchend', function (e) {
+	    endDrag();
+	  });
+	  canvas.addEventListener('touchcancel', function (e) {
+	    endDrag();
+	  });
+	  canvas.addEventListener('touchmove', function (e) {
+	    e.preventDefault();
+	    var touch = e.changedTouches[0];
+	    if (!touch) return;
+	    moveDrag(touch.clientX, touch.clientY);
+	  });
 	
 	  var closeEditor = function closeEditor() {
 	    getEl('editor').style.display = 'none';
@@ -394,6 +427,7 @@
 	  };
 	  var openEditor = function openEditor() {
 	    if (OL) OL.user.logInteraction();
+	
 	    getEl('editor').style.display = '';
 	    isEditorOpen = true;
 	  };
@@ -432,6 +466,15 @@
 	    } catch (err) {
 	      alert(err);
 	    }
+	  };
+	
+	  getEl('instructions-run').onclick = function () {
+	    var val = getEl('instructions-input').value;
+	    if (val.length === 0) {
+	      return;
+	    }
+	    game.performAction(val[0].toLowerCase());
+	    getEl('instructions-input').value = val.substring(1);
 	  };
 	
 	  gridWorld.run();
@@ -1435,6 +1478,8 @@
 	      var ctx = this.context;
 	
 	      ctx.clearRect(0, 0, this.width, this.height);
+	      ctx.fillStyle = 'black';
+	      ctx.fillRect(0, 0, this.width, this.height);
 	
 	      var layer = void 0;
 	      var _iteratorNormalCompletion2 = true;
@@ -1515,7 +1560,7 @@
 	
 	    window.onresize = function (e) {
 	      _this.canvas.width = window.innerWidth;
-	      _this.canvas.height = Math.max(window.innerHeight, 600);
+	      _this.canvas.height = Math.max(window.innerHeight, 720);
 	      _this.width = _this.canvas.width;
 	      _this.height = _this.canvas.height;
 	    };
@@ -1860,6 +1905,8 @@
 	
 	      if (delegate) {
 	        delegate();
+	      } else {
+	        message = 'Unknown instruction.';
 	      }
 	
 	      return message;
