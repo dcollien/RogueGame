@@ -1,7 +1,7 @@
 import RogueGame from './RogueGame.js';
 import {InventoryTypes} from './Constants';
 
-const OL = window.OL;
+const OL = null;//window.OL;
 const getEl = (id) => document.getElementById(id);
 
 const uploadFile = (file, url, onLoad, onError) => {
@@ -20,22 +20,25 @@ const uploadFile = (file, url, onLoad, onError) => {
 const init = () => {
   let artStyles = [];
   let selectedStyle = 0;
+
+  let map;
+  let spriteSheets = [{
+      name: 'Robot in the Wilderness',
+      url: 'assets/sprites.png'
+    },
+    {
+      name: 'I drew this in MS Paint',
+      url: 'assets/sprites2.png'
+    }
+  ];
+
   if (OL) {
     OL.resize(720, true);
     OL.on('resize', () => {
       window.onresize();
     });
     // Running as OpenLearning widget
-    let map;
-    let spriteSheets = [{
-        name: 'Robot in the Wilderness',
-        url: 'assets/sprites.png'
-      },
-      {
-        name: 'I drew this in MS Paint',
-        url: 'assets/sprites2.png'
-      }
-    ];
+
 
     if (OL.mode === 'exhibit') {
       map = OL.exhibit.data.map;
@@ -82,14 +85,14 @@ const init = () => {
         });
       };
     }
+  }
 
-    if (map) {
-      getEl('edit-text').value = map;
-    }
-
-    if (spriteSheets && spriteSheets.length > 0) {
-      artStyles = spriteSheets;
-    }
+  if (map) {
+    getEl('edit-text').value = map;
+  }  
+  
+  if (spriteSheets && spriteSheets.length > 0) {
+    artStyles = spriteSheets;
   }
 
   const artStylesSelect = getEl('theme');
