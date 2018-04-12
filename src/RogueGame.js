@@ -477,7 +477,8 @@ export default class RogueGame {
       }
       if (
         this.inventory.includes(InventoryTypes.Raft) &&
-        grid.tiles[grid.player.index].tile === TileTypes.Water
+        grid.tiles[grid.player.index].tile === TileTypes.Water &&
+        grid.tiles[grid.player.index].feature !== FeatureTypes.Stone
       ) {
         extrasLayer[grid.player.index] = 'Raft';
       }

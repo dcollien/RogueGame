@@ -102,6 +102,7 @@ export default class RuleSet {
         const feature = location.feature;
 
         let canMove = false;
+        const cameFromSteppingStone = (oldLocation.tile === TileTypes.Water && oldLocation.feature === FeatureTypes.Stone);
         const isSteppingStone = (tile === TileTypes.Water && location.feature === FeatureTypes.Stone);
         if (tile === TileTypes.Ground || isSteppingStone) {
           // moving on ground
@@ -115,7 +116,7 @@ export default class RuleSet {
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Gold);
             this.inventory.splice(inventoryAt, 1);
           }
-          if (oldLocation.tile === TileTypes.Water && canMove) {
+          if (oldLocation.tile === TileTypes.Water && !cameFromSteppingStone && canMove) {
             // moving from water to ground
             message = 'Raft broke.';
             const inventoryAt = this.inventory.indexOf(InventoryTypes.Raft);
