@@ -9,7 +9,7 @@ class Tile {
       't': [TileTypes.Ground, FeatureTypes.Stump], // extra, shimmed in
       'a': [TileTypes.Ground, FeatureTypes.Axe],
       'k': [TileTypes.Ground, FeatureTypes.Key],
-      // 'o': [TileTypes.Ground, FeatureTypes.Stone],
+      'o': [TileTypes.Ground, FeatureTypes.Stone],
       '$': [TileTypes.Ground, FeatureTypes.Gold],
       'x': [TileTypes.Ground, FeatureTypes.Start], // extra, shimmed in
       ' ': [TileTypes.Ground, FeatureTypes.Empty],
@@ -17,7 +17,7 @@ class Tile {
       '!': [TileTypes.Wall,   FeatureTypes.DoorOpen], // extra, shimmed in
       '*': [TileTypes.Wall,   FeatureTypes.Wall],
       '~': [TileTypes.Water,  FeatureTypes.Empty],
-      // 'O': [TileTypes.Water,  FeatureTypes.Stone],
+      'O': [TileTypes.Water,  FeatureTypes.Stone],
       'd': [TileTypes.Ground, FeatureTypes.Dynamite],
       'w': [TileTypes.Ground, FeatureTypes.Wilson], // ???
       'D': [TileTypes.Ground, FeatureTypes.Exploded] // extra, shimmed in
@@ -175,7 +175,7 @@ export default class RogueGame {
         "NE-Ground": {sheet: {x: 1, y: 1}},
         "NU-Ground": {sheet: {x: 2, y: 1}},
         "NW-Ground": {sheet: {x: 3, y: 1}},
-        "O-Ground":  {sheet: {x: 4, y: 1}},
+        "Stone-Ground": {sheet: {x: 2, y: 7}},
         "SE-Ground": {sheet: {x: 5, y: 1}},
         "SU-Ground": {sheet: {x: 6, y: 1}},
         "SW-Ground": {sheet: {x: 7, y: 1}},
@@ -224,7 +224,7 @@ export default class RogueGame {
         "NE-Water": {sheet: {x: 0, y: 6}},
         "NU-Water": {sheet: {x: 1, y: 6}},
         "NW-Water": {sheet: {x: 2, y: 6}},
-        "O-Water":  {sheet: {x: 3, y: 6}},
+        "Stone-Water":  {sheet: {x: 3, y: 7}},
         "SE-Water": {sheet: {x: 4, y: 6}},
         "SU-Water": {sheet: {x: 5, y: 6}},
         "SW-Water": {sheet: {x: 6, y: 6}},

@@ -24,7 +24,7 @@ const init = () => {
   let map;
   let spriteSheets = [{
       name: 'Robot in the Wilderness',
-      url: 'assets/sprites.png'
+      url: 'assets/sprites2018.png'
     },
     {
       name: 'I drew this in MS Paint',
@@ -90,7 +90,7 @@ const init = () => {
   if (map) {
     getEl('edit-text').value = map;
   }  
-  
+
   if (spriteSheets && spriteSheets.length > 0) {
     artStyles = spriteSheets;
   }
@@ -238,7 +238,8 @@ const init = () => {
       key: [2, 2],
       dynamite: [6, 0],
       raft: [3, 3],
-      gold: [7, 0]
+      gold: [7, 0],
+      stone: [2, 7]
     };
     const gridSize = 64;
     const gridWidth = 8;

@@ -8,8 +8,7 @@ const PassableTerrain = [
   FeatureTypes.Key,
   FeatureTypes.Dynamite,
   FeatureTypes.Gold,
-  FeatureTypes.Exploded,
-  FeatureTypes.Stone
+  FeatureTypes.Exploded
 ];
 
 export default class RuleSet {
@@ -102,8 +101,8 @@ export default class RuleSet {
         const feature = location.feature;
 
         let canMove = false;
-        const isSteppingStone = (tile === TileTypes.Water && location.feature === FeatureTypes.Stone);
-        if (tile === TileTypes.Ground || isSteppingStone) {
+
+        if (tile === TileTypes.Ground) {
           // moving on ground
           if (PassableTerrain.includes(feature)) {
             canMove = true;
@@ -136,14 +135,7 @@ export default class RuleSet {
             this.inventory.splice(inventoryAt, 1);
           }
         } else if (tile === TileTypes.Water) {
-          if (feature === FeatureTypes.Empty && this.inventory.includes(InventoryTypes.Stone)) {
-            // place a stone
-            location.feature = FeatureTypes.Stone;
-            const inventoryAt = this.inventory.indexOf(InventoryTypes.Stone);
-            this.inventory.splice(inventoryAt, 1);
-            message = 'Placed a stone.';
-            canMove = true;
-          } else if (this.inventory.includes(InventoryTypes.Raft)) {
+          if (this.inventory.includes(InventoryTypes.Raft)) {
             // if you have a raft you can move on water
             canMove = true;
           } else {
@@ -157,8 +149,7 @@ export default class RuleSet {
         if (canMove) {
           this.grid.player.index = inFront;
 
-          // The features we can pick up
-          const pickups = [FeatureTypes.Key, FeatureTypes.Axe, FeatureTypes.Dynamite, FeatureTypes.Gold, FeatureTypes.Stone];
+          const pickups = [FeatureTypes.Key, FeatureTypes.Axe, FeatureTypes.Dynamite, FeatureTypes.Gold];
 
           if (tile === TileTypes.Ground && pickups.includes(location.feature)) {
             this.inventory.push(location.feature);
