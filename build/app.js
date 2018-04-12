@@ -218,6 +218,33 @@
 	    logDisplay.scrollTop = logDisplay.scrollHeight;
 	  };
 	
+	  var initIcons = function initIcons() {
+	    var inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
+	    var iconPositions = {
+	      axe: [0, 0],
+	      key: [2, 2],
+	      dynamite: [6, 0],
+	      raft: [3, 3],
+	      gold: [7, 0]
+	    };
+	    var gridSize = 64;
+	    var gridWidth = 8;
+	    inventoryIcons.forEach(function (icon) {
+	      var pos = iconPositions[icon.id];
+	      var size = icon.offsetWidth < 50 ? 32 : 64;
+	
+	      if (pos) {
+	        icon.style.backgroundImage = 'url("' + spriteSheet + '")';
+	        icon.style.backgroundSize = size * gridWidth + 'px';
+	        icon.style.backgroundPosition = -pos[0] * size + 'px ' + -pos[1] * size + 'px';
+	      }
+	    });
+	  };
+	  initIcons();
+	  window.addEventListener('resize', function () {
+	    initIcons();
+	  });
+	
 	  var onChange = function onChange(grid, inventory, visited, isGameOver, message, windowStr) {
 	    getEl('agent-window').innerText = windowStr;
 	
@@ -274,31 +301,6 @@
 	
 	  var game = new _RogueGame2.default(canvas, gameState, spriteSheet, onChange);
 	  var gridWorld = game.gridWorld;
-	
-	  var initIcons = function initIcons() {
-	    var inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
-	    var iconPositions = {
-	      axe: [0, 0],
-	      key: [2, 2],
-	      dynamite: [6, 0],
-	      raft: [3, 3],
-	      gold: [7, 0]
-	    };
-	    var gridSize = 64;
-	    var gridWidth = 8;
-	    var media = window.matchMedia("(max-width: 480px)");
-	    inventoryIcons.forEach(function (icon) {
-	      var pos = iconPositions[icon.id];
-	      var size = media.matches ? 32 : 64;
-	
-	      if (pos) {
-	        icon.style.backgroundImage = 'url("' + spriteSheet + '")';
-	        icon.style.backgroundSize = size * gridWidth + 'px';
-	        icon.style.backgroundPosition = -pos[0] * size + 'px ' + -pos[1] * size + 'px';
-	      }
-	    });
-	  };
-	  initIcons();
 	
 	  var actionButtons = {
 	    l: getEl('action-l'),
@@ -1557,14 +1559,17 @@
 	    this.canvas.style.top = "0";
 	    this.canvas.style.left = "0";
 	    this.context = this.canvas.getContext('2d');
-	
-	    window.onresize = function (e) {
+	    var resize = function resize() {
 	      _this.canvas.width = window.innerWidth;
 	      _this.canvas.height = Math.max(window.innerHeight, 720);
 	      _this.width = _this.canvas.width;
 	      _this.height = _this.canvas.height;
 	    };
-	    window.onresize();
+	
+	    window.addEventListener('resize', function (e) {
+	      return resize;
+	    });
+	    resize();
 	
 	    this.running = false;
 	    this.frameRequest = null;

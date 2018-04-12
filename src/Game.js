@@ -31,14 +31,15 @@ export default class Game {
     this.canvas.style.top = "0";
     this.canvas.style.left = "0";
     this.context = this.canvas.getContext('2d');
-
-    window.onresize = (e) => {
+    const resize = () => {
       this.canvas.width = window.innerWidth;
       this.canvas.height = Math.max(window.innerHeight, 720);
       this.width = this.canvas.width;
       this.height = this.canvas.height;
     };
-    window.onresize();
+
+    window.addEventListener('resize', (e) => resize);
+    resize();
 
     this.running = false;
     this.frameRequest = null;

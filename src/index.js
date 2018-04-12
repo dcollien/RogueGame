@@ -164,6 +164,34 @@ const init = () => {
     logDisplay.scrollTop = logDisplay.scrollHeight;
   };
 
+
+  const initIcons = () => {
+    const inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
+    const iconPositions = {
+      axe: [0, 0],
+      key: [2, 2],
+      dynamite: [6, 0],
+      raft: [3, 3],
+      gold: [7, 0]
+    };
+    const gridSize = 64;
+    const gridWidth = 8;
+    inventoryIcons.forEach(icon => {
+      const pos = iconPositions[icon.id];
+      const size = icon.offsetWidth < 50 ? 32 : 64;
+
+      if (pos) {
+        icon.style.backgroundImage = `url("${spriteSheet}")`;
+        icon.style.backgroundSize = `${size * gridWidth}px`;
+        icon.style.backgroundPosition = `${-pos[0] * size}px ${-pos[1] * size}px`;
+      }
+    });
+  };
+  initIcons();
+  window.addEventListener('resize', () => {
+    initIcons();
+  });
+
   const onChange = (grid, inventory, visited, isGameOver, message, windowStr) => {
     getEl('agent-window').innerText = windowStr;
 
@@ -228,30 +256,6 @@ const init = () => {
   const game = new RogueGame(canvas, gameState, spriteSheet, onChange);
   const gridWorld = game.gridWorld;
 
-  const initIcons = () => {
-    const inventoryIcons = Array.from(getEl('inventory').getElementsByTagName("LI"));
-    const iconPositions = {
-      axe: [0, 0],
-      key: [2, 2],
-      dynamite: [6, 0],
-      raft: [3, 3],
-      gold: [7, 0]
-    };
-    const gridSize = 64;
-    const gridWidth = 8;
-    const media = window.matchMedia("(max-width: 480px)");
-    inventoryIcons.forEach(icon => {
-      const pos = iconPositions[icon.id];
-      const size = media.matches ? 32 : 64;
-
-      if (pos) {
-        icon.style.backgroundImage = `url("${spriteSheet}")`;
-        icon.style.backgroundSize = `${size * gridWidth}px`;
-        icon.style.backgroundPosition = `${-pos[0] * size}px ${-pos[1] * size}px`;
-      }
-    });
-  };
-  initIcons();
 
   const actionButtons = {
     l: getEl('action-l'),
