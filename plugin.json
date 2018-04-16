@@ -4,7 +4,7 @@
     "author": ["David Collien"],
     "email": "david@openlearning.com",
     "license": "ISC",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Hunt for Treasure",
     "categories": ["search", "computing", "ai"],
     "setup": {},

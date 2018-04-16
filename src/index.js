@@ -28,7 +28,7 @@ const init = () => {
     },
     {
       name: 'I drew this in MS Paint',
-      url: 'assets/sprites2.png'
+      url: 'assets/sprites2-2018.png'
     }
   ];
 
